@@ -49,4 +49,23 @@ GO
 exec rmv_table @tab_name = 'tmp_wb_na'
 GO
 
---TODO: create temp tables
+/* data for now in text format, to ommit possible types excpetions connected with input data */
+CREATE TABLE dbo.tmp_wb_na
+(	numer nvarchar(20) NOT NULL
+,	data_utw nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
+,   numer_rach nvarchar(20) NOT NULL
+,	waluta_rach nvarchar(3) NOT NULL
+,	data_od nvarchar(10) NOT NULL
+,	data_do nvarchar(10) NOT NULL
+,	saldo_poc nvarchar(20) NOT NULL
+,	saldo_kon nvarchar(20) NOT NULL
+)
+
+CREATE TABLE dbo.tmp_wb_poz
+(	numer nvarchar(20) NOT NULL
+,	data nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
+,	kwota nvarchar(20) NOT NULL
+,	saldo_po nvarchar(20) NOT NULL
+,	opis nvarchar(100) NOT NULL /* from this dane_odbiorcy will be created */
+)
+GO
