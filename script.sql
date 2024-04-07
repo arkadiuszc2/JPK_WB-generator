@@ -53,7 +53,7 @@ GO
 CREATE TABLE dbo.tmp_wb_na
 (	numer nvarchar(20) NOT NULL
 ,	data_utw nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
-,   numer_rach nvarchar(20) NOT NULL
+,   numer_rach nvarchar(26) NOT NULL
 ,	waluta_rach nvarchar(3) NOT NULL
 ,	data_od nvarchar(10) NOT NULL
 ,	data_do nvarchar(10) NOT NULL
@@ -66,6 +66,14 @@ CREATE TABLE dbo.tmp_wb_poz
 ,	data nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
 ,	kwota nvarchar(20) NOT NULL
 ,	saldo_po nvarchar(20) NOT NULL
-,	opis nvarchar(100) NOT NULL /* from this dane_odbiorcy will be created */
+,	opis nvarchar(256) NOT NULL /* from this dane_odbiorcy will be created */
 )
+GO
+
+--TODO: data validation
+/*CREATE PROCEDURE dbo.tmp_na_check
+AS
+	END  	
+*/
+
 GO
