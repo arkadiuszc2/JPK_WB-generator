@@ -54,16 +54,17 @@ GO
 CREATE TABLE dbo.tmp_wb_na
 (	numer nvarchar(20) NOT NULL
 ,	data_utw nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
-,   numer_rach nvarchar(26) NOT NULL
+,   numer_rach nvarchar(26) NOT NULL -- TODO: Change to IBAN
 ,	waluta_rach nvarchar(3) NOT NULL
 ,	data_od nvarchar(10) NOT NULL
 ,	data_do nvarchar(10) NOT NULL
 ,	saldo_poc nvarchar(20) NOT NULL
 ,	saldo_kon nvarchar(20) NOT NULL
 )
-
+GO
 --SELECT * FROM tmp_wb_na
-
+exec rmv_table @tab_name = 'tmp_wb_poz'  -- is it necessary because ssis deletes tables before importing data??
+GO
 CREATE TABLE dbo.tmp_wb_poz
 (	numer nvarchar(20) NOT NULL
 ,	data nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
@@ -72,6 +73,69 @@ CREATE TABLE dbo.tmp_wb_poz
 ,	opis nvarchar(256) NOT NULL /* from this dane_odbiorcy will be created */
 )
 GO
+
+-- create table with additional data neede for jpk but not provided in headers or positions
+IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'PODMIOT'
+	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
+)
+BEGIN
+	CREATE TABLE dbo.Podmiot 
+	(	PODMIOT_ID	nchar(4) NOT NULL CONSTRAINT PK_Podmiot PRIMARY KEY
+	,	KodUrzedu	nvarchar(3) NOT NULL
+	,	NIP			nvarchar(10) NOT NULL
+	,	REGON		nvarchar(9) NOT NULL
+	,	KodKraju	nvarchar(40) NOT NULL 
+	,	Wojewodztwo nvarchar(40) NOT NULL 
+	,	Powiat		nvarchar(40) NOT NULL 
+	,	Gmina		nvarchar(40) NOT NULL 
+	,	Ulica		nvarchar(40) NOT NULL
+	,	NrDomu		nvarchar(10) NOT NULL
+	,	NrLokalu	nvarchar(40) NOT NULL
+	,	Miejscowosc nvarchar(40) NOT NULL 
+	,	KodPocztowy nchar(6) NOT NULL
+	,	Poczta		nvarchar(40) NOT NULL
+	)
+END
+GO
+-- fill table PODMIOT with test data
+IF NOT EXISTS ( SELECT 1 FROM Podmiot )
+BEGIN
+INSERT INTO dbo.Podmiot 
+(
+    PODMIOT_ID, 
+    KodUrzedu, 
+    NIP, 
+    REGON, 
+    KodKraju, 
+    Wojewodztwo, 
+    Powiat, 
+    Gmina, 
+    Ulica, 
+    NrDomu, 
+    NrLokalu, 
+    Miejscowosc, 
+    KodPocztowy, 
+    Poczta
+)
+VALUES
+(
+    '0001', 
+    '026', 
+    '1234567890', 
+    '012345678', 
+    'Polska', 
+    'mazowieckie', 
+    'warszawski', 
+    'Warszawa', 
+    'Marsza?kowska', 
+    '100', 
+    '12A', 
+    'Warszawa', 
+    '00-001', 
+    'Warszawa'
+)
+
+END
 
 --data validation for tmp_na
 CREATE PROCEDURE dbo.tmp_na_check
@@ -104,7 +168,7 @@ AS
 
 	SELECT @InvalidDatesCount = COUNT(*)
 	FROM tmp_wb_na
-	WHERE data_od < datautw
+	WHERE data_od < data_utw
 
 	IF @InvalidDatesCount > 0
 	BEGIN
