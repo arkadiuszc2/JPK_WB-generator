@@ -48,6 +48,7 @@ AS
 GO
 exec rmv_table @tab_name = 'tmp_wb_na'
 GO
+--drop table dbo.tmp_wb_na
 
 /* data for now in text format, to ommit possible types excpetions connected with input data */
 CREATE TABLE dbo.tmp_wb_na
@@ -61,6 +62,8 @@ CREATE TABLE dbo.tmp_wb_na
 ,	saldo_kon nvarchar(20) NOT NULL
 )
 
+--SELECT * FROM tmp_wb_na
+
 CREATE TABLE dbo.tmp_wb_poz
 (	numer nvarchar(20) NOT NULL
 ,	data nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
@@ -70,10 +73,58 @@ CREATE TABLE dbo.tmp_wb_poz
 )
 GO
 
---TODO: data validation
-/*CREATE PROCEDURE dbo.tmp_na_check
+--data validation for tmp_na
+CREATE PROCEDURE dbo.tmp_na_check
 AS
-	END  	
-*/
+--parameter number must be unique for every row because it identifies bank statement in db
+	DECLARE @totalRows int, @uniqueNum int 
+
+	SELECT @totalRows = COUNT(*) FROM tmp_wb_na
+	
+	SELECT @uniqueNum = COUNT(DISTINCT numer) FROM tmp_wb_na
+	
+	IF @uniqueNum < @totalRows 
+	BEGIN
+		RAISERROR(N'Parameter numer must be unique for every row', 16, 6)
+		RETURN -1
+	END
+-- start date must be before end date
+	DECLARE @InvalidDatesCount int 
+
+	SELECT @InvalidDatesCount = COUNT(*)
+	FROM tmp_wb_na
+	WHERE data_do < data_od
+
+	IF @InvalidDatesCount > 0
+	BEGIN
+		RAISERROR(N'Parameter data_od must be a date before parameter data_do', 16, 6)
+		RETURN -1
+	END
+-- creation date must be before start date
+
+	SELECT @InvalidDatesCount = COUNT(*)
+	FROM tmp_wb_na
+	WHERE data_od < datautw
+
+	IF @InvalidDatesCount > 0
+	BEGIN
+		RAISERROR(N'Paramter data_utw must be a date before data_od', 16, 6)
+		RETURN -1
+	END
+--every date must be after current date
+
+	DECLARE @date_max nchar(8)
+	SET @date_max = CONVERT(nchar(6), GETDATE(), 112) -- rok i mies z dzis
+
+	IF EXISTS ( SELECT 1 FROM tmp_wb_na t WHERE t.data_utw >= @date_max 
+	OR t.data_od >= @date_max
+    OR t.data_do >= @date_max 
+	)
+	BEGIN
+		RAISERROR(N'Every date must be before current date', 16, 6)
+		RETURN -1
+	END
+
+-- TODO: data validation for tmp_poz
 
 GO
