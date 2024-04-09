@@ -1,4 +1,4 @@
-/* create db */
+﻿/* create db */
 
 if not exists (select 1 from master ..sysdatabases d where d.[name] = 'jpkdb')
 BEGIN
@@ -124,16 +124,51 @@ VALUES
     '1234567890', 
     '012345678', 
     'Polska', 
-    'mazowieckie', 
+    'Mazowieckie', 
     'warszawski', 
     'Warszawa', 
-    'Marsza?kowska', 
+    'Marszałkowska', 
     '100', 
     '12A', 
     'Warszawa', 
     '00-001', 
     'Warszawa'
 )
+INSERT INTO dbo.Podmiot 
+(
+    PODMIOT_ID, 
+    KodUrzedu, 
+    NIP, 
+    REGON, 
+    KodKraju, 
+    Wojewodztwo, 
+    Powiat, 
+    Gmina, 
+    Ulica, 
+    NrDomu, 
+    NrLokalu, 
+    Miejscowosc, 
+    KodPocztowy, 
+    Poczta
+)
+VALUES
+(
+    '0002', 
+    '026', 
+    '0987654321', 
+    '876543210', 
+    'Polska', 
+    'Mazowieckie', 
+    'warszawski',
+    'Warszawa', 
+    'Krakowskie Przedmieście', 
+    '50', 
+    '5B', 
+    'Warszawa', 
+    '00-002',
+    'Warszawa' 
+)
+
 
 END
 
