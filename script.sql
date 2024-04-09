@@ -168,9 +168,171 @@ VALUES
     '00-002',
     'Warszawa' 
 )
-
-
 END
+-- create list of currencies codes to validate if provided code is valid
+-- it will be only valid if provided code exists in this list
+GO
+IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'currency'
+	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
+)
+BEGIN
+	CREATE TABLE dbo.currency 
+	(	name   NVARCHAR(20)
+	,	code   NVARCHAR(3) 
+	,	symbol NVARCHAR(5)
+	)
+
+	-- Insert currency records
+	INSERT INTO currency VALUES ('Leke', 'ALL', N'Lek');
+INSERT INTO currency VALUES ('Dollars', 'USD', N'$');
+INSERT INTO currency VALUES ('Afghanis', 'AFN', N'؋');
+INSERT INTO currency VALUES ('Pesos', 'ARS', N'$');
+INSERT INTO currency VALUES ('Guilders', 'AWG', N'ƒ');
+INSERT INTO currency VALUES ('Dollars', 'AUD', N'$');
+INSERT INTO currency VALUES ('New Manats', 'AZN', N'ман');
+INSERT INTO currency VALUES ('Dollars', 'BSD', N'$');
+INSERT INTO currency VALUES ('Dollars', 'BBD', N'$');
+INSERT INTO currency VALUES ('Rubles', 'BYR', N'p.');
+INSERT INTO currency VALUES ('Euro', 'EUR', N'€');
+INSERT INTO currency VALUES ('Dollars', 'BZD', N'BZ$');
+INSERT INTO currency VALUES ('Dollars', 'BMD', N'$');
+INSERT INTO currency VALUES ('Bolivianos', 'BOB', N'$b');
+INSERT INTO currency VALUES ('Convertible Marka', N'BAM', N'KM');
+INSERT INTO currency VALUES ('Pula', 'BWP', N'P');
+INSERT INTO currency VALUES ('Leva', 'BGN', N'лв');
+INSERT INTO currency VALUES ('Reais', 'BRL', N'R$');
+INSERT INTO currency VALUES ('Pounds', 'GBP', N'£');
+INSERT INTO currency VALUES ('Dollars', 'BND', N'$');
+INSERT INTO currency VALUES ('Riels', 'KHR', N'៛');
+INSERT INTO currency VALUES ('Dollars', 'CAD', N'$');
+INSERT INTO currency VALUES ('Dollars', 'KYD', N'$');
+INSERT INTO currency VALUES ('Pesos', 'CLP', N'$');
+INSERT INTO currency VALUES ('Yuan Renminbi', N'CNY', N'¥');
+INSERT INTO currency VALUES ('Pesos', 'COP', N'$');
+INSERT INTO currency VALUES ('Colón', 'CRC', N'₡');
+INSERT INTO currency VALUES ('Kuna', 'HRK', N'kn');
+INSERT INTO currency VALUES ('Pesos', 'CUP', N'₱');
+INSERT INTO currency VALUES ('Koruny', 'CZK', N'Kč');
+INSERT INTO currency VALUES ('Kroner', 'DKK', N'kr');
+INSERT INTO currency VALUES ('Pesos', 'DOP ', N'RD$');
+INSERT INTO currency VALUES ('Dollars', 'XCD', N'$');
+INSERT INTO currency VALUES ('Pounds', 'EGP', N'£');
+INSERT INTO currency VALUES ('Colones', 'SVC', N'$');
+INSERT INTO currency VALUES ('Pounds', 'FKP', N'£');
+INSERT INTO currency VALUES ('Dollars', 'FJD', N'$');
+INSERT INTO currency VALUES ('Cedis', 'GHC', N'¢');
+INSERT INTO currency VALUES ('Pounds', 'GIP', N'£');
+INSERT INTO currency VALUES ('Quetzales', 'GTQ', N'Q');
+INSERT INTO currency VALUES ('Pounds', 'GGP', N'£');
+INSERT INTO currency VALUES ('Dollars', 'GYD', N'$');
+INSERT INTO currency VALUES ('Lempiras', 'HNL', N'L');
+INSERT INTO currency VALUES ('Dollars', 'HKD', N'$');
+INSERT INTO currency VALUES ('Forint', 'HUF', N'Ft');
+INSERT INTO currency VALUES ('Kronur', 'ISK', N'kr');
+INSERT INTO currency VALUES ('Rupees', 'INR', N'Rp');
+INSERT INTO currency VALUES ('Rupiahs', 'IDR', N'Rp');
+INSERT INTO currency VALUES ('Rials', 'IRR', N'﷼');
+INSERT INTO currency VALUES ('Pounds', 'IMP', N'£');
+INSERT INTO currency VALUES ('New Shekels', 'ILS', N'₪');
+INSERT INTO currency VALUES ('Dollars', 'JMD', N'J$');
+INSERT INTO currency VALUES ('Yen', 'JPY', N'¥');
+INSERT INTO currency VALUES ('Pounds', 'JEP', N'£');
+INSERT INTO currency VALUES ('Tenge', 'KZT', N'лв');
+INSERT INTO currency VALUES ('Won', 'KPW', N'₩');
+INSERT INTO currency VALUES ('Won', 'KRW', N'₩');
+INSERT INTO currency VALUES ('Soms', 'KGS', N'лв');
+INSERT INTO currency VALUES ('Kips', 'LAK', N'₭');
+INSERT INTO currency VALUES ('Lati', 'LVL', N'Ls');
+INSERT INTO currency VALUES ('Pounds', 'LBP', N'£');
+INSERT INTO currency VALUES ('Dollars', 'LRD', N'$');
+INSERT INTO currency VALUES ('Switzerland Francs', 'CHF', N'CHF');
+INSERT INTO currency VALUES ('Litai', 'LTL', N'Lt');
+INSERT INTO currency VALUES ('Denars', 'MKD', N'ден');
+INSERT INTO currency VALUES ('Ringgits', 'MYR', N'RM');
+INSERT INTO currency VALUES ('Rupees', 'MUR', N'₨');
+INSERT INTO currency VALUES ('Pesos', 'MXN', N'$');
+INSERT INTO currency VALUES ('Tugriks', 'MNT', N'₮');
+INSERT INTO currency VALUES ('Meticais', 'MZN', N'MT');
+INSERT INTO currency VALUES ('Dollars', 'NAD', N'$');
+INSERT INTO currency VALUES ('Rupees', 'NPR', N'₨');
+INSERT INTO currency VALUES ('Guilders', 'ANG', N'ƒ');
+INSERT INTO currency VALUES ('Dollars', 'NZD', N'$');
+INSERT INTO currency VALUES ('Cordobas', 'NIO', N'C$');
+INSERT INTO currency VALUES ('Nairas', 'NGN', N'₦');
+INSERT INTO currency VALUES ('Krone', 'NOK', N'kr');
+INSERT INTO currency VALUES ('Rials', 'OMR', N'﷼');
+INSERT INTO currency VALUES ('Rupees', 'PKR', N'₨');
+INSERT INTO currency VALUES ('Balboa', 'PAB', N'B/.');
+INSERT INTO currency VALUES ('Guarani', 'PYG', N'Gs');
+INSERT INTO currency VALUES ('Nuevos Soles', 'PEN', N'S/.');
+INSERT INTO currency VALUES ('Pesos', 'PHP', N'Php');
+INSERT INTO currency VALUES ('Zlotych', 'PLN', N'zł');
+INSERT INTO currency VALUES ('Rials', 'QAR', N'﷼');
+INSERT INTO currency VALUES ('New Lei', 'RON', N'lei');
+INSERT INTO currency VALUES ('Rubles', 'RUB', N'руб');
+INSERT INTO currency VALUES ('Pounds', 'SHP', N'£');
+INSERT INTO currency VALUES ('Riyals', 'SAR', N'﷼');
+INSERT INTO currency VALUES ('Dinars', 'RSD', N'Дин.');
+INSERT INTO currency VALUES ('Rupees', 'SCR', N'₨');
+INSERT INTO currency VALUES ('Dollars', 'SGD', N'$');
+INSERT INTO currency VALUES ('Dollars', 'SBD', N'$');
+INSERT INTO currency VALUES ('Shillings', 'SOS', N'S');
+INSERT INTO currency VALUES ('Rand', 'ZAR', N'R');
+INSERT INTO currency VALUES ('Rupees', 'LKR', N'₨');
+INSERT INTO currency VALUES ('Kronor', 'SEK', N'kr');
+INSERT INTO currency VALUES ('Dollars', 'SRD', N'$');
+INSERT INTO currency VALUES ('Pounds', 'SYP', N'£');
+INSERT INTO currency VALUES ('New Dollars', 'TWD', N'NT$');
+INSERT INTO currency VALUES ('Baht', 'THB', N'฿');
+INSERT INTO currency VALUES ('Dollars', 'TTD', N'TT$');
+INSERT INTO currency VALUES ('Lira', 'TRY', N'₺');
+INSERT INTO currency VALUES ('Liras', 'TRL', N'£');
+INSERT INTO currency VALUES ('Dollars', 'TVD', N'$');
+INSERT INTO currency VALUES ('Hryvnia', 'UAH', N'₴');
+INSERT INTO currency VALUES ('Pesos', 'UYU', N'$U');
+INSERT INTO currency VALUES ('Sums', 'UZS', N'лв');
+INSERT INTO currency VALUES ('Bolivares Fuertes', 'VEF', N'Bs');
+INSERT INTO currency VALUES ('Dong', 'VND', N'₫');
+INSERT INTO currency VALUES ('Rials', 'YER', N'﷼');
+INSERT INTO currency VALUES ('Zimbabwe Dollars', 'ZWD', N'Z$');
+INSERT INTO currency VALUES ('Rupees', 'INR', N'₹');
+END
+GO
+-- drop table currency
+
+-- Select values from table                        
+--SELECT * FROM currency;
+
+IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'ELOG_N'
+	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
+)
+BEGIN
+	CREATE TABLE dbo.ELOG_N
+	(	id_elog_n		int not null identity CONSTRAINT PK_ELOG_N PRIMARY KEY
+	,	opis_n			nvarchar(100) NOT NULL
+	,	dt				datetime NOT NULL DEFAULT GETDATE()
+	,	u_name			nvarchar(40) NOT NULL DEFAULT USER_NAME()
+	,	h_name			nvarchar(100) NOT NULL DEFAULT HOST_NAME()
+	) 
+END
+GO
+--SELECT * FROM ELOG_N
+
+/* detale błędu
+** musi być najpierw wstawiony nagłowek błedu a potem z ID nagłowka błedu wstawiane są detale
+*/
+IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'ELOG_D'
+	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
+)
+BEGIN
+	CREATE TABLE dbo.ELOG_D
+	(	id_elog_n		int not null 
+			CONSTRAINT FK_ELOG_N__ELOG_P FOREIGN KEY
+			REFERENCES ELOG_N(id_elog_n)
+	,	opis_d			nvarchar(100) NOT NULL
+	) 
+END
+GO
 
 --data validation for tmp_na
 CREATE PROCEDURE dbo.tmp_na_check
