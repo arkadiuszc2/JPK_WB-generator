@@ -54,7 +54,7 @@ GO
 CREATE TABLE dbo.tmp_wb_na
 (	numer nvarchar(20) NOT NULL
 ,	data_utw nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
-,   numer_rach nvarchar(26) NOT NULL -- TODO: Change to IBAN
+,   numer_rach nvarchar(28) NOT NULL -- TODO: Change to IBAN
 ,	waluta_rach nvarchar(3) NOT NULL
 ,	data_od nvarchar(10) NOT NULL
 ,	data_do nvarchar(10) NOT NULL
