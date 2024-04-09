@@ -318,6 +318,8 @@ END
 GO
 --SELECT * FROM ELOG_N
 
+-- TODO create WB and WB_DET tables
+
 /* detale błędu
 ** musi być najpierw wstawiony nagłowek błedu a potem z ID nagłowka błedu wstawiane są detale
 */
@@ -335,6 +337,103 @@ END
 GO
 
 --data validation for tmp_na
+
+/* create empty procedure to be able to use alter later an run script multiple times */
+IF NOT EXISTS 
+(	SELECT 1 
+		FROM sysobjects o 
+		WHERE	(o.name = 'create_empty_proc')
+		AND		(OBJECTPROPERTY(o.[ID], N'IsProcedure') = 1)
+)
+BEGIN
+	DECLARE @sql nvarchar(500)
+	SET @sql = 'CREATE PROCEDURE dbo.create_empty_proc AS '
+	EXEC sp_sqlexec @sql
+END
+
+GO
+
+EXEC dbo.create_empty_proc @proc_name = 'create_empty_fun'
+GO
+
+ALTER PROCEDURE dbo.create_empty_fun (@fun_name nvarchar(100))
+AS
+	IF NOT EXISTS 
+	(	SELECT 1 
+		FROM sysobjects o 
+		WHERE	(o.name = @fun_name)
+		AND		(OBJECTPROPERTY(o.[ID], N'IsScalarFunction') = 1)
+	)
+	BEGIN
+		DECLARE @sql nvarchar(500)
+		SET @sql = 'CREATE FUNCTION dbo.' + @fun_name + N' () returns money AS begin return 0 end '
+		EXEC sp_sqlexec @sql
+	END
+GO
+
+GO
+
+--convert text to money type
+/*
+SELECT dbo.txt2M(N'123,456.89') -- 123456,89
+SELECT dbo.txt2M(N'123.456,89') -- 123456,89
+SELECT dbo.txt2M(N'123 456,89') -- 123456,89
+select dbo.txt2M(netto_fa),* from tmp_fa_na
+*/
+ALTER FUNCTION dbo.txt2M(@txt nvarchar(20) )
+RETURNS MONEY
+AS
+BEGIN
+	SET @txt = REPLACE(@txt, N' ', N'')
+
+	IF @txt LIKE '%,%.%' 
+	BEGIN
+		SET @txt = REPLACE(@txt, N',', N'')
+	END ELSE
+	IF @txt LIKE '%.%,%'
+	BEGIN
+		SET @txt = REPLACE(@txt, N'.', N'')
+	END
+	SET @txt = REPLACE(@txt, N',', N'.')
+	RETURN  CONVERT(money, @txt)
+END
+GO
+
+
+EXEC dbo.create_empty_fun 'txt2D'
+GO
+
+-- convert data to date type
+/*
+SELECT dbo.txt2D(N'2022-03-31') -- 2022-03-31 00:00:00.000
+SELECT dbo.txt2D(N'31/03/2022') -- 2022-03-31 00:00:00.000
+SELECT dbo.txt2D(N'20220331') -- 2022-03-31 00:00:00.000
+select dbo.txt2M(netto_fa),dbo.txt2D(data),* from tmp_fa_na
+*/
+
+ALTER FUNCTION dbo.txt2D(@txt nvarchar(10) )
+RETURNS DATETIME
+AS
+BEGIN
+--YYYYMMDD
+	IF @txt LIKE N'[1-3][0-9][0-9][0-9][0-1][0-9][0-3][0-9]%'
+		RETURN CONVERT(datetime, @txt, 112)
+
+-- Replace possible separators to .
+	SET @txt = REPLACE(@txt, N'-', N'.')
+	SET @txt = REPLACE(@txt, N'/', N'.')
+	SET @txt = REPLACE(@txt, N'_', N'.')
+	SET @txt = REPLACE(@txt, N' ', N'.')
+
+--YYYY.MM.DD
+	IF @txt LIKE N'[1-3][0-9][0-9][0-9].[0-1][0-9].[0-3][0-9]%'
+		RETURN CONVERT(datetime, @txt, 102)
+--DD.MM.YYYY
+	RETURN CONVERT(datetime, @txt, 104)
+END
+GO
+
+
 CREATE PROCEDURE dbo.tmp_na_check
 AS
 --parameter number must be unique for every row because it identifies bank statement in db
