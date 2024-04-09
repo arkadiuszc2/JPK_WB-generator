@@ -591,5 +591,48 @@ AS
 	GO
 	
 -- TODO: data validation for tmp_poz
+ALTER PROCEDURE dbo.tmp_poz_check (@err int =0 output)
+AS
+	EXEC dbo.tmp_na_check @err = @err output
 
+-- check if headers validation caused error
+	IF NOT (@err = 0)
+	BEGIN
+		RAISERROR(N'Errors in headers', 16, 3)
+		RETURN -1
+	END
+	DECLARE @cnt int, @en nvarchar(100), @id_en int
+	SET @en = 'Error in procedure: tmp_poz_check / '
+
+-- check if every header have psotions
+	SELECT @cnt = COUNT(*)
+		FROM tmp_wb_na  n
+		WHERE NOT EXISTS 
+		( SELECT 1
+			FROM tmp_wb_poz  d
+			WHERE	d.numer	= n.numer
+		)
+
+	IF @cnt > 0
+	BEGIN
+		SET @en = @en + 'Headers without positions'
+		INSERT INTO ELOG_N(opis_n) VALUES (@en)
+		SET @id_en = SCOPE_IDENTITY()
+
+		INSERT INTO ELOG_D(id_elog_n, opis_d) 
+		SELECT @id_en, N'Withdrawal number:' + n.numer
+			+ N' / Account num:' + n.numer_rach
+		FROM tmp_wb_na n
+		WHERE NOT EXISTS 
+		( SELECT 1
+			FROM tmp_wb_poz d
+			WHERE	d.numer	= n.numer
+		)
+		RAISERROR(@en, 16, 4)
+		SET @err = 1
+		RETURN -1
+	END
+GO
+
+-- TODO: Add missing currency validation in headers
 GO
