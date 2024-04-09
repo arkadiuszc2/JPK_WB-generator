@@ -81,6 +81,7 @@ IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'PODMIOT'
 BEGIN
 	CREATE TABLE dbo.Podmiot 
 	(	PODMIOT_ID	nchar(4) NOT NULL CONSTRAINT PK_Podmiot PRIMARY KEY
+	,	numer_rach  nvarchar(28) NOT NULL
 	,	KodUrzedu	nvarchar(3) NOT NULL
 	,	NIP			nvarchar(10) NOT NULL
 	,	REGON		nvarchar(9) NOT NULL
@@ -374,7 +375,7 @@ GO
 GO
 
 --convert text to money type
-/*
+/*test
 SELECT dbo.txt2M(N'123,456.89') -- 123456,89
 SELECT dbo.txt2M(N'123.456,89') -- 123456,89
 SELECT dbo.txt2M(N'123 456,89') -- 123456,89
@@ -404,7 +405,7 @@ EXEC dbo.create_empty_fun 'txt2D'
 GO
 
 -- convert data to date type
-/*
+/* test
 SELECT dbo.txt2D(N'2022-03-31') -- 2022-03-31 00:00:00.000
 SELECT dbo.txt2D(N'31/03/2022') -- 2022-03-31 00:00:00.000
 SELECT dbo.txt2D(N'20220331') -- 2022-03-31 00:00:00.000
@@ -434,8 +435,30 @@ END
 GO
 
 
-CREATE PROCEDURE dbo.tmp_na_check
+-- validate headers data
+CREATE PROCEDURE dbo.tmp_na_check(@err int = 0 output)
 AS
+	DECLARE @cnt int, @en nvarchar(100), @id_en int
+
+	SET @err = 0
+
+		SET @en = 'Error in procedure tmp_na_check / '
+
+	--headers file must not be empty
+	SELECT @cnt = COUNT(*) FROM tmp_wb_na
+
+	IF @cnt = 0
+	BEGIN
+		SET @en = @en + 'Headers file is empty !!!'
+		INSERT INTO ELOG_N(opis_n) VALUES (@en)
+		SET @id_en = SCOPE_IDENTITY()
+
+		INSERT INTO ELOG_D(id_elog_n, opis_d) VALUES (@id_en, '0 rows in tmp_wb_na')
+
+		RAISERROR(@en, 16, 4)
+		SET @err = 1
+		RETURN -1
+	END
 --parameter number must be unique for every row because it identifies bank statement in db
 	DECLARE @totalRows int, @uniqueNum int 
 
@@ -445,7 +468,23 @@ AS
 	
 	IF @uniqueNum < @totalRows 
 	BEGIN
-		RAISERROR(N'Parameter numer must be unique for every row', 16, 6)
+		SET @en = @en + 'Bank statement number must be unique !!!'
+		INSERT INTO ELOG_N(opis_n) VALUES (@en)
+		SET @id_en = SCOPE_IDENTITY()
+
+		INSERT INTO ELOG_D(id_elog_n, opis_d) 
+		SELECT DISTINCT @id_en, t.numer
+		FROM tmp_wb_na t
+		WHERE t.numer IN (
+			SELECT numer
+			FROM tmp_wb_na
+			GROUP BY numer
+			HAVING COUNT(*) > 1
+		)
+
+		RAISERROR(@en, 16, 4)
+		SET @err = 1
+		RETURN -1
 		RETURN -1
 	END
 -- start date must be before end date
@@ -457,7 +496,16 @@ AS
 
 	IF @InvalidDatesCount > 0
 	BEGIN
-		RAISERROR(N'Parameter data_od must be a date before parameter data_do', 16, 6)
+	SET @en = @en + 'Parameter data_od must be a date before parameter data_do !!!'
+		INSERT INTO ELOG_N(opis_n) VALUES (@en)
+		SET @id_en = SCOPE_IDENTITY()
+
+		INSERT INTO ELOG_D(id_elog_n, opis_d)
+		/* 112 - yyyymmdd */
+			SELECT @id_en, 'Invalid dates in row. data_od: ' + CONVERT(nvarchar, data_od, 112) + ', data_do: ' + CONVERT(nvarchar, data_do, 112)
+			FROM tmp_wb_na
+			WHERE data_do < data_od
+
 		RETURN -1
 	END
 -- creation date must be before start date
@@ -468,23 +516,80 @@ AS
 
 	IF @InvalidDatesCount > 0
 	BEGIN
-		RAISERROR(N'Paramter data_utw must be a date before data_od', 16, 6)
-		RETURN -1
+	SET @en = @en + 'Paramter data_utw must be a date before data_od !!!'
+		INSERT INTO ELOG_N(opis_n) VALUES (@en)
+		SET @id_en = SCOPE_IDENTITY()
+		/* suppose that date in in format dd.mm.yyyy */
+		INSERT INTO ELOG_D(id_elog_n, opis_d)
+        SELECT @id_en, N'Invalid dates in row. data_utw: ' + CONVERT(nvarchar, data_utw, 112) 
+		+ ', data_od: ' + CONVERT(nvarchar, data_od, 112)
+        FROM tmp_wb_na
+        WHERE data_od < data_utw
+
+    RETURN -1
 	END
 --every date must be after current date
 
 	DECLARE @date_max nchar(8)
-	SET @date_max = CONVERT(nchar(6), GETDATE(), 112) -- rok i mies z dzis
+	SET @date_max = CONVERT(nchar(8), GETDATE(), 112) -- rok i mies z dzis
 
 	IF EXISTS ( SELECT 1 FROM tmp_wb_na t WHERE t.data_utw >= @date_max 
 	OR t.data_od >= @date_max
     OR t.data_do >= @date_max 
 	)
 	BEGIN
-		RAISERROR(N'Every date must be before current date', 16, 6)
+		SET @en = @en + 'Every date must be before current date!!!'
+		INSERT INTO ELOG_N(opis_n) VALUES (@en)
+		SET @id_en = SCOPE_IDENTITY()
+		/* suppose that date in in format dd.mm.yyyy */
+		INSERT INTO ELOG_D(id_elog_n, opis_d)
+        SELECT 
+            @id_en, 
+            N'Invalid future data in row: data.utw. ' + CONVERT(nvarchar, t.data_utw, 112) + 
+            ', data_od: ' + CONVERT(nvarchar, t.data_od, 112) + 
+            ', data_do: ' + CONVERT(nvarchar, t.data_do, 112)
+        FROM tmp_wb_na t
+        WHERE 
+            CONVERT(nchar(8), t.data_utw, 112) >= @date_max 
+            OR CONVERT(nchar(8), t.data_od, 112) >= @date_max
+            OR CONVERT(nchar(8), t.data_do, 112) >= @date_max 
+
+		RETURN -1
+	END
+	-- account number must be listed in PODMIOT table
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM tmp_wb_na t
+		WHERE EXISTS (
+			SELECT 1
+			FROM PODMIOT p
+			WHERE p.numer_rach = t.numer_rach
+		)
+	)
+	BEGIN
+		SET @en = @en + 'Every account number must have matching entity in PODMIOT table!!'
+		INSERT INTO ELOG_N(opis_n) VALUES (@en)
+		SET @id_en = SCOPE_IDENTITY()
+
+		INSERT INTO ELOG_D(id_elog_n, opis_d) 
+        SELECT DISTINCT @id_en, 'Missing account number: ' + t.numer_rach
+        FROM tmp_wb_na t
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM PODMIOT p
+            WHERE p.numer_rach = t.numer_rach
+        )
+
+		RAISERROR(@en, 16, 1)
+    RETURN -1
+
 		RETURN -1
 	END
 
+	EXEC dbo.create_empty_proc @proc_name = 'tmp_poz_check'
+	GO
+	
 -- TODO: data validation for tmp_poz
 
 GO
