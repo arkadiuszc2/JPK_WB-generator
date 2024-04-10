@@ -81,7 +81,7 @@ IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'PODMIOT'
 BEGIN
 	CREATE TABLE dbo.Podmiot 
 	(	PODMIOT_ID	nchar(4) NOT NULL CONSTRAINT PK_Podmiot PRIMARY KEY
-	,	numer_rach  nvarchar(28) NOT NULL
+	,	numer_rach  nvarchar(28) NOT NULL  --delete this columna, its moved to known_acc_num table
 	,	KodUrzedu	nvarchar(3) NOT NULL
 	,	NIP			nvarchar(10) NOT NULL
 	,	REGON		nvarchar(9) NOT NULL
@@ -171,6 +171,7 @@ VALUES
 )
 END
 -- create list of currencies codes to validate if provided code is valid
+
 -- it will be only valid if provided code exists in this list
 GO
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'currency'
@@ -304,6 +305,38 @@ GO
 -- Select values from table                        
 --SELECT * FROM currency;
 
+--create table connecting podmiot with its account numbers (one podmiot can have multiple acc_num and create different bank statements)
+IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'known_acc_num'
+	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
+)
+BEGIN
+	CREATE TABLE known_acc_num (
+    id_podmiotu nchar(4) NOT NULL,
+    numer_rach NVARCHAR(255) NOT NULL UNIQUE,
+    CONSTRAINT fk_podmiotu FOREIGN KEY (id_podmiotu) REFERENCES PODMIOT(PODMIOT_ID)
+);
+
+END
+GO
+
+-- fill table with data
+IF NOT EXISTS ( SELECT 1 FROM known_acc_num )
+BEGIN
+	INSERT INTO dbo.known_acc_num
+	(
+		id_podmiotu,
+		numer_rach
+
+	)
+	VALUES
+	(
+		'0001',
+		'PL61109010140000071219812874'
+	)
+END
+GO
+
+-- Error Handling
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'ELOG_N'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
 )
@@ -321,9 +354,6 @@ GO
 
 -- TODO create WB and WB_DET tables
 
-/* detale błędu
-** musi być najpierw wstawiony nagłowek błedu a potem z ID nagłowka błedu wstawiane są detale
-*/
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'ELOG_D'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
 )
@@ -506,6 +536,7 @@ AS
 			FROM tmp_wb_na
 			WHERE data_do < data_od
 
+			RAISERROR(@en, 16, 4)
 		RETURN -1
 	END
 -- creation date must be before start date
@@ -526,6 +557,7 @@ AS
         FROM tmp_wb_na
         WHERE data_od < data_utw
 
+		RAISERROR(@en, 16, 4)
     RETURN -1
 	END
 --every date must be after current date
@@ -554,6 +586,7 @@ AS
             OR CONVERT(nchar(8), t.data_od, 112) >= @date_max
             OR CONVERT(nchar(8), t.data_do, 112) >= @date_max 
 
+			RAISERROR(@en, 16, 4)
 		RETURN -1
 	END
 	-- account number must be listed in PODMIOT table
@@ -581,7 +614,7 @@ AS
             WHERE p.numer_rach = t.numer_rach
         )
 
-		RAISERROR(@en, 16, 1)
+		RAISERROR(@en, 16, 4)
     RETURN -1
 
 		RETURN -1
@@ -589,6 +622,76 @@ AS
 
 	EXEC dbo.create_empty_proc @proc_name = 'tmp_poz_check'
 	GO
+
+-- Check if currency in header has its matching code in currency table
+
+DECLARE @id_en int;
+
+IF EXISTS (
+    SELECT 1
+    FROM tmp_wb_na t
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM currency c
+        WHERE c.code = t.waluta_rach
+    )
+)
+BEGIN
+    DECLARE @en nvarchar(max) = N'Currency code from header does not exist in currency table'
+    
+    INSERT INTO ELOG_N(opis_n) VALUES (@en)
+    SET @id_en = SCOPE_IDENTITY()
+
+    INSERT INTO ELOG_D(id_elog_n, opis_d) 
+        SELECT DISTINCT @id_en, 'Wrong currency code: ' + t.waluta_rach
+        FROM tmp_wb_na t
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM currency c
+            WHERE c.code = t.waluta_rach
+        )
+
+    RAISERROR(@en, 16, 4)
+    RETURN -1
+END
+GO
+
+-- check if account number from header is connected with Podmiot entity in known_acc_num table
+DECLARE @id_en int;
+
+-- Sprawdza, czy numer rachunku z nagłówka znajduje się w NowaTabela i jest związany z podmiotem
+IF NOT EXISTS (
+    SELECT 1
+    FROM tmp_wb_na n
+    WHERE EXISTS (
+        SELECT 1
+        FROM known_acc_num nt
+        WHERE nt.numer_rach = n.numer_rach
+    )
+)
+BEGIN
+    -- Tworzy komunikat o błędzie
+    DECLARE @en nvarchar(max) = N'Account number for header is not connected with any known podmiot'
+    
+    -- Zapisuje nagłówek błędu
+    INSERT INTO ELOG_N(opis_n) VALUES (@en)
+    SET @id_en = SCOPE_IDENTITY()
+    
+    -- Zapisuje szczegółowe informacje o numerach rachunku, które nie są związane z podmiotem
+    INSERT INTO ELOG_D(id_elog_n, opis_d) 
+        SELECT DISTINCT @id_en, 'Invalid account number: ' + n.numer_rach
+        FROM tmp_wb_na n
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM known_acc_num nt
+            WHERE nt.numer_rach = n.numer_rach
+        )
+
+    RAISERROR(@en, 16, 4)
+    RETURN -1
+END
+GO
+
 	
 -- TODO: data validation for tmp_poz
 ALTER PROCEDURE dbo.tmp_poz_check (@err int =0 output)
@@ -635,4 +738,5 @@ AS
 GO
 
 -- TODO: Add missing currency validation in headers
+-- TODO: a dictionary for PODMIOT and numer_rachunku
 GO
