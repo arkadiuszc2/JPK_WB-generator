@@ -75,13 +75,13 @@ CREATE TABLE dbo.tmp_wb_poz
 GO
 
 -- create table with additional data neede for jpk but not provided in headers or positions
+-- drop table Podmiot
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'PODMIOT'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
 )
 BEGIN
 	CREATE TABLE dbo.Podmiot 
 	(	PODMIOT_ID	nchar(4) NOT NULL CONSTRAINT PK_Podmiot PRIMARY KEY
-	,	numer_rach  nvarchar(28) NOT NULL  --delete this columna, its moved to known_acc_num table
 	,	KodUrzedu	nvarchar(3) NOT NULL
 	,	NIP			nvarchar(10) NOT NULL
 	,	REGON		nvarchar(9) NOT NULL
@@ -381,7 +381,23 @@ BEGIN
 	SET @sql = 'CREATE PROCEDURE dbo.create_empty_proc AS '
 	EXEC sp_sqlexec @sql
 END
+GO
 
+ALTER PROCEDURE dbo.create_empty_proc (@proc_name nvarchar(100))
+/* przekazujemy samą nazwę procedura sama dodaje dbo.
+*/
+AS
+	IF NOT EXISTS 
+	(	SELECT 1 
+		FROM sysobjects o 
+		WHERE	(o.name = @proc_name)
+		AND		(OBJECTPROPERTY(o.[ID], N'IsProcedure') = 1)
+	)
+	BEGIN
+		DECLARE @sql nvarchar(500)
+		SET @sql = 'CREATE PROCEDURE dbo.' + @proc_name + N' AS '
+		EXEC sp_sqlexec @sql
+	END
 GO
 
 EXEC dbo.create_empty_proc @proc_name = 'create_empty_fun'
@@ -402,6 +418,7 @@ AS
 	END
 GO
 
+EXEC dbo.create_empty_fun 'txt2M'
 GO
 
 --convert text to money type
@@ -464,15 +481,17 @@ BEGIN
 END
 GO
 
+EXEC dbo.create_empty_proc @proc_name = 'tmp_na_check'
+GO
 
 -- validate headers data
-CREATE PROCEDURE dbo.tmp_na_check(@err int = 0 output)
+ALTER PROCEDURE dbo.tmp_na_check(@err int = 0 output)
 AS
 	DECLARE @cnt int, @en nvarchar(100), @id_en int
 
 	SET @err = 0
 
-		SET @en = 'Error in procedure tmp_na_check / '
+	SET @en = 'Error in procedure tmp_na_check / '
 
 	--headers file must not be empty
 	SELECT @cnt = COUNT(*) FROM tmp_wb_na
@@ -537,6 +556,7 @@ AS
 			WHERE data_do < data_od
 
 			RAISERROR(@en, 16, 4)
+			SET @err = 1
 		RETURN -1
 	END
 -- creation date must be before start date
@@ -557,6 +577,7 @@ AS
         FROM tmp_wb_na
         WHERE data_od < data_utw
 
+		SET @err = 1
 		RAISERROR(@en, 16, 4)
     RETURN -1
 	END
@@ -586,46 +607,12 @@ AS
             OR CONVERT(nchar(8), t.data_od, 112) >= @date_max
             OR CONVERT(nchar(8), t.data_do, 112) >= @date_max 
 
+			SET @err = 1
 			RAISERROR(@en, 16, 4)
 		RETURN -1
 	END
-	-- account number must be listed in PODMIOT table
-
-	IF NOT EXISTS (
-		SELECT 1
-		FROM tmp_wb_na t
-		WHERE EXISTS (
-			SELECT 1
-			FROM PODMIOT p
-			WHERE p.numer_rach = t.numer_rach
-		)
-	)
-	BEGIN
-		SET @en = @en + 'Every account number must have matching entity in PODMIOT table!!'
-		INSERT INTO ELOG_N(opis_n) VALUES (@en)
-		SET @id_en = SCOPE_IDENTITY()
-
-		INSERT INTO ELOG_D(id_elog_n, opis_d) 
-        SELECT DISTINCT @id_en, 'Missing account number: ' + t.numer_rach
-        FROM tmp_wb_na t
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM PODMIOT p
-            WHERE p.numer_rach = t.numer_rach
-        )
-
-		RAISERROR(@en, 16, 4)
-    RETURN -1
-
-		RETURN -1
-	END
-
-	EXEC dbo.create_empty_proc @proc_name = 'tmp_poz_check'
-	GO
-
 -- Check if currency in header has its matching code in currency table
 
-DECLARE @id_en int;
 
 IF EXISTS (
     SELECT 1
@@ -637,7 +624,7 @@ IF EXISTS (
     )
 )
 BEGIN
-    DECLARE @en nvarchar(max) = N'Currency code from header does not exist in currency table'
+    SET @en = @en + N'Currency code from header does not exist in currency table'
     
     INSERT INTO ELOG_N(opis_n) VALUES (@en)
     SET @id_en = SCOPE_IDENTITY()
@@ -651,15 +638,13 @@ BEGIN
             WHERE c.code = t.waluta_rach
         )
 
-    RAISERROR(@en, 16, 4)
+		RAISERROR(@en, 16, 4)
+		SET @err = 1
     RETURN -1
 END
-GO
 
 -- check if account number from header is connected with Podmiot entity in known_acc_num table
-DECLARE @id_en int;
 
--- Sprawdza, czy numer rachunku z nagłówka znajduje się w NowaTabela i jest związany z podmiotem
 IF NOT EXISTS (
     SELECT 1
     FROM tmp_wb_na n
@@ -670,14 +655,11 @@ IF NOT EXISTS (
     )
 )
 BEGIN
-    -- Tworzy komunikat o błędzie
-    DECLARE @en nvarchar(max) = N'Account number for header is not connected with any known podmiot'
+    SET @en = @en + N'Account number for header is not connected with any known podmiot'
     
-    -- Zapisuje nagłówek błędu
     INSERT INTO ELOG_N(opis_n) VALUES (@en)
     SET @id_en = SCOPE_IDENTITY()
     
-    -- Zapisuje szczegółowe informacje o numerach rachunku, które nie są związane z podmiotem
     INSERT INTO ELOG_D(id_elog_n, opis_d) 
         SELECT DISTINCT @id_en, 'Invalid account number: ' + n.numer_rach
         FROM tmp_wb_na n
@@ -694,6 +676,11 @@ GO
 
 	
 -- TODO: data validation for tmp_poz
+
+EXEC dbo.create_empty_proc @proc_name = 'tmp_poz_check'
+GO
+
+
 ALTER PROCEDURE dbo.tmp_poz_check (@err int =0 output)
 AS
 	EXEC dbo.tmp_na_check @err = @err output
