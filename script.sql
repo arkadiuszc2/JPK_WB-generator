@@ -694,7 +694,7 @@ AS
 	DECLARE @cnt int, @en nvarchar(100), @id_en int
 	SET @en = 'Error in procedure: tmp_poz_check / '
 
--- check if every header have psotions
+-- check if every header have positions
 	SELECT @cnt = COUNT(*)
 		FROM tmp_wb_na  n
 		WHERE NOT EXISTS 
@@ -705,12 +705,12 @@ AS
 
 	IF @cnt > 0
 	BEGIN
-		SET @en = @en + 'Headers without positions'
+		SET @en = @en + 'Headers without positions exists'
 		INSERT INTO ELOG_N(opis_n) VALUES (@en)
 		SET @id_en = SCOPE_IDENTITY()
 
 		INSERT INTO ELOG_D(id_elog_n, opis_d) 
-		SELECT @id_en, N'Withdrawal number:' + n.numer
+		SELECT @id_en, N'Bank statement number:' + n.numer
 			+ N' / Account num:' + n.numer_rach
 		FROM tmp_wb_na n
 		WHERE NOT EXISTS 
@@ -722,8 +722,35 @@ AS
 		SET @err = 1
 		RETURN -1
 	END
+
+-- check if every postion have its header
+SELECT @cnt = COUNT(*)
+		FROM tmp_wb_poz  n
+		WHERE NOT EXISTS 
+		( SELECT 1
+			FROM tmp_wb_na  d
+			WHERE	d.numer	= n.numer
+		)
+
+	IF @cnt > 0
+	BEGIN
+		SET @en = @en + N'Postitons without headers exists'
+		INSERT INTO ELOG_N(opis_n) VALUES (@en)
+		SET @id_en = SCOPE_IDENTITY()
+
+		INSERT INTO ELOG_D(id_elog_n, opis_d) 
+		SELECT @id_en,  N'Bank statement number:' + n.numer
+		FROM tmp_wb_poz n
+		WHERE NOT EXISTS 
+		( SELECT 1
+			FROM tmp_wb_na d
+			WHERE	d.numer	= n.numer
+		)
+		RAISERROR(@en, 16, 4)
+		SET @err = 1
+		RETURN -1
+	END
 GO
 
--- TODO: Add missing currency validation in headers
--- TODO: a dictionary for PODMIOT and numer_rachunku
+-- TODO: validate date in poz
 GO
