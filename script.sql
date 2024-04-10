@@ -750,7 +750,45 @@ SELECT @cnt = COUNT(*)
 		SET @err = 1
 		RETURN -1
 	END
+
+-- check if date of the postions is between dates of the connected header
+
+	IF EXISTS (
+    SELECT 1
+    FROM tmp_wb_poz poz
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM tmp_wb_na na
+        WHERE na.numer = poz.numer 
+        AND poz.data > na.data_od 
+        AND poz.data < na.data_do
+    )
+)
+BEGIN
+    Set @en = @en + N'Invalid date in position compared to its header'
+
+    INSERT INTO ELOG_N(opis_n) VALUES (@en)
+    SET @id_en = SCOPE_IDENTITY()
+    
+    INSERT INTO ELOG_D(id_elog_n, opis_d) 
+        SELECT DISTINCT @id_en, 'Invalid date in position of bank statement with number: ' + poz.numer + ', Invalid date: ' + CONVERT(nvarchar, poz.data, 120)
+        FROM tmp_wb_poz poz
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM tmp_wb_na na
+            WHERE na.numer = poz.numer 
+            AND poz.data > na.data_od 
+            AND poz.data < na.data_do
+        )
+		SET @err = 1
+		RAISERROR(@en, 16, 4)
+    RETURN -1
+END
+
 GO
 
+
+-- SELECT * FROM tmp_wb_poz
+-- SELECT * FROM tmp_wb_na
 -- TODO: validate date in poz
 GO
