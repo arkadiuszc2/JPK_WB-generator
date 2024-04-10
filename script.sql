@@ -63,13 +63,17 @@ CREATE TABLE dbo.tmp_wb_na
 )
 GO
 --SELECT * FROM tmp_wb_na
+-- drop table tmp_wb_poz
 exec rmv_table @tab_name = 'tmp_wb_poz'  -- is it necessary because ssis deletes tables before importing data??
 GO
 CREATE TABLE dbo.tmp_wb_poz
 (	numer nvarchar(20) NOT NULL
+,	lp int NOT NULL
+,	numer_wiersza nvarchar(20) NOT NULL
 ,	data nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
 ,	kwota nvarchar(20) NOT NULL
 ,	saldo_po nvarchar(20) NOT NULL
+,	nazwa_kontrahenta nvarchar(256) NOT NULL
 ,	opis nvarchar(256) NOT NULL /* from this dane_odbiorcy will be created */
 )
 GO
@@ -305,6 +309,7 @@ GO
 -- Select values from table                        
 --SELECT * FROM currency;
 
+--drop table known_acc_num
 --create table connecting podmiot with its account numbers (one podmiot can have multiple acc_num and create different bank statements)
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'known_acc_num'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
@@ -312,7 +317,8 @@ IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'known_acc_num'
 BEGIN
 	CREATE TABLE known_acc_num (
     id_podmiotu nchar(4) NOT NULL,
-    numer_rach NVARCHAR(255) NOT NULL UNIQUE,
+    numer_rach NVARCHAR(28) NOT NULL,
+    CONSTRAINT pk_numer_rach PRIMARY KEY (numer_rach),
     CONSTRAINT fk_podmiotu FOREIGN KEY (id_podmiotu) REFERENCES PODMIOT(PODMIOT_ID)
 );
 
@@ -367,8 +373,52 @@ BEGIN
 END
 GO
 
---data validation for tmp_na
+/* final table for headers */
+IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'WB'
+	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
+)
+BEGIN
+	CREATE TABLE dbo.WB
+	(	numer_rach 	nvarchar(28) NOT NULL CONSTRAINT FK_WB__known_acc_num FOREIGN KEY
+							REFERENCES known_acc_num(numer_rach)
+											/* with what account number its connected, knowing numer_rach whe know PODMIOT to from data in known_acc_num table */
+	,	numer		nvarchar(20)	NOT NULL CONSTRAINT PK_WB1 PRIMARY KEY
+											/* unique number for every bank statement */
+	,	saldo_pocz  money	NOT NULL
+	,	saldo_kon	money	NOT NULL
+	,	waluta_rach nvarchar(3)	NOT NULL
+	,	data_utw datetime NOT NULL
+	,	data_od datetime	NOT NULL
+	,	data_do datetime NOT NULL
+	)
+END
+GO
 
+/*final table for positions*/
+IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'WB_DET'
+	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
+)
+BEGIN
+
+	CREATE TABLE dbo.WB_DET
+	(	numer		nvarchar(20) NOT NULL CONSTRAINT FK_WB_DET__WB FOREIGN KEY
+							REFERENCES WB(numer)	/* number of connected bank statement */
+	,	lp			int	NOT NULL IDENTITY CONSTRAINT PK_WB_DET PRIMARY KEY
+													/* to identify a position in one bank statement */
+	,	data datetime NOT NULL
+	,	kwota money NOT NULL
+	,	saldo_po money NOT NULL
+	,	nazwa_kontrahenta nvarchar(256)
+	,	opis nvarchar(256) NOT NULL
+	)
+	END
+	GO
+
+
+
+
+
+--data validation for tmp_na
 /* create empty procedure to be able to use alter later an run script multiple times */
 IF NOT EXISTS 
 (	SELECT 1 
@@ -785,10 +835,68 @@ BEGIN
     RETURN -1
 END
 
-GO
+-- make a loop to create final tables with data for jpk
 
+	
+	DECLARE CC INSENSITIVE CURSOR FOR 
+		SELECT n.numer, n.numer_rach, n.waluta_rach
+			, dbo.txt2D(n.data_utw)		AS data_utw
+			, dbo.txt2D(n.data_od)		AS data_od
+			, dbo.txt2D(n.data_do)	AS data_do
+			, dbo.txt2M(n.saldo_poc) AS saldo_poc
+			, dbo.txt2M(n.saldo_kon) AS saldo_kon
+			FROM tmp_wb_na n
 
+	DECLARE @numer nvarchar(20), @numer_rach nvarchar(28), @waluta_rach nvarchar(3)
+	 , @data_utw datetime, @data_od datetime, @data_do datetime, @saldo_poc money, @saldo_kon money
+	 , @TrCnt int
+	 OPEN CC
+	 FETCH NEXT FROM CC INTO @numer, @numer_rach, @waluta_rach, @data_utw, @data_od, @data_do, @saldo_poc, @saldo_kon
+
+	 -- start inserting headers and positions
+	 WHILE (@@FETCH_STATUS = 0) AND (@err = 0)
+	 BEGIN
+		SET @TrCnt = @@TRANCOUNT
+		IF @TrCnt =0 
+			BEGIN TRAN TR_POZ_NA
+		ELSE 
+			SAVE TRAN TR_POZ_NA
+
+		/* insert bank statement header */
+		INSERT INTO WB (numer_rach, numer, saldo_kon, saldo_kon, waluta_rach, data_utw, data_od, data_do)
+			VALUES (@numer_rach, @numer, @saldo_kon, @saldo_poc, @waluta_rach, @data_utw, @data_od, @data_do)
+		/* get id */
+		SELECT @err=@@ERROR /*, @id_wb = SCOPE_IDENTITY() */
+
+		IF @err = 0
+		BEGIN
+			/* if header was inserted successfully insert position */
+			INSERT INTO WB_DET ( numer, lp, data, kwota, saldo_po, nazwa_kontrahenta, opis)
+			SELECT @numer, 
+			t.lp
+			, dbo.txt2M(t.data) 
+			, t.kwota
+			, dbo.txt2M(t.saldo_po)
+			, t.nazwa_kontrahenta
+			, dbo.txt2M(t.opis)
+			FROM dbo.tmp_wb_poz t
+
+			SET @err = @@ERROR 
+		END
+		IF @err = 0 /* wszystko OK */
+		BEGIN
+			IF @trCnt = 0 /* zapisz zmiany */
+				COMMIT TRAN TR_POZ_NA
+		END 
+		ELSE /* odwołaj zmiany */
+			ROLLBACK TRAN TR_POZ_NA
+
+		FETCH NEXT FROM CC INTO @numer, @numer_rach, @waluta_rach, @data_utw, @data_od, @data_do, @saldo_poc, @saldo_kon
+	 END
+	 CLOSE CC
+	 DEALLOCATE CC
+	GO
 -- SELECT * FROM tmp_wb_poz
 -- SELECT * FROM tmp_wb_na
+-- SELECT * FROM known_acc_num
 -- TODO: validate date in poz
-GO
