@@ -899,4 +899,146 @@ END
 -- SELECT * FROM tmp_wb_poz
 -- SELECT * FROM tmp_wb_na
 -- SELECT * FROM known_acc_num
--- TODO: validate date in poz
+
+-- Whate can be done to imrpove in future: list all types of jpk_wb and create procedure which choose type and takes as second and third argument dates of the bank statement to be then able too choose which bank statemnt
+-- from our data take to generate report
+
+
+
+-- create functions for preapring data for xml
+EXEC dbo.create_empty_fun @fun_name = 'SAFT_CLEAR_TXT'
+GO
+
+ALTER FUNCTION dbo.SAFT_CLEAR_TXT(@msg nvarchar(256) )
+/* clear text are from dangerous characters*/
+RETURNS nvarchar(256)
+AS
+BEGIN
+	IF (@msg IS NULL)  OR (RTRIM(@msg) = N'')
+		RETURN N''
+
+	SET @msg = LTRIM(RTRIM(@msg))
+	/* clear potentially dangerous characters for XML within the string */
+	SET @msg = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@msg,'\n',N' '),N'<',N'?'),N'>','?'),N':',N'?'),N'\',N'?')
+	SET @msg = REPLACE(@msg,N'/',N'!')
+	RETURN RTRIM(LEFT(@msg,255)) /* limit for SAFT text field is 255 */
+END
+GO
+
+EXEC dbo.create_empty_fun @fun_name = 'SAFT_CLEAR_VATID'
+GO
+
+ALTER FUNCTION dbo.SAFT_CLEAR_VATID(@vatid nvarchar(20) )
+RETURNS nvarchar(10)
+AS
+BEGIN
+	/* sometimes they are spaces and other chars in NIP, - and : */
+	/* NIP can have country prefix but jpk dont want to include it  */
+	SET @vatid = REPLACE(REPLACE(REPLACE(@vatid,N' ',N''),N':',''),N'-','')
+	SET @vatid = dbo.SAFT_CLEAR_TXT(@vatid)
+	/* clear potentially dangerous characters for XML within the string */
+	IF @vatid LIKE 'VATID%'
+		SET @vatid = RTRIM(SUBSTRING(@vatid,6,20))
+	IF (@vatid LIKE 'NIP%') OR (@vatid LIKE 'VAT%')
+		SET @vatid = RTRIM(SUBSTRING(@vatid,4,20))
+/* delete prefix if exists
+- in theory we shuld compare with ue countries dictionary */
+	IF @vatid LIKE N'[A-Z][A-Z][1-9]%'
+		SET @vatid = LTRIM(RTRIM(SUBSTRING(@vatid,3,20)))
+
+	RETURN LEFT(@vatid,10)
+END
+GO
+
+
+EXEC dbo.create_empty_fun @fun_name = 'SAFT_DEFAULT'
+GO
+
+ALTER FUNCTION dbo.SAFT_DEFAULT( @msg nvarchar(250), @default nvarchar(20)=N'brak' )
+/* sometimes we can type 'brak' in JPK when we dont have some info */
+RETURNS nvarchar(250)
+AS
+BEGIN
+	RETURN LTRIM(RTRIM(ISNULL(dbo.SAFT_NULL(@msg),@default)))
+END
+GO
+
+EXEC dbo.create_empty_fun @fun_name = 'SAFT_NULL'
+GO
+
+ALTER FUNCTION dbo.SAFT_NULL(@msg nvarchar(250) )
+RETURNS nvarchar(250)
+AS
+/* when text is empty but must be an XML NULL*/
+BEGIN
+	IF @msg IS NULL OR RTRIM(@msg)=N''
+		RETURN NULL
+	RETURN @msg
+END
+GO
+
+EXEC dbo.create_empty_fun @fun_name = 'SAFT_DATE'
+GO
+
+ALTER FUNCTION dbo.SAFT_DATE(@d datetime )
+/* data fromat accepted in jpk */
+RETURNS nchar(10)
+AS
+BEGIN
+	RETURN CONVERT(nchar(10), @d, 120)
+END
+GO
+
+EXEC dbo.create_empty_fun @fun_name = 'SAFT_GET_AMT'
+GO
+ALTER FUNCTION dbo.SAFT_GET_AMT(@amt money )
+/* money format accepted in xml */
+RETURNS nvarchar(20)
+AS
+BEGIN
+	IF @amt IS NULL
+		RETURN N''
+	RETURN RTRIM(LTRIM(STR(@amt,18,2)))
+END
+GO
+
+EXEC dbo.create_empty_fun @fun_name = 'PobierzSumeObciazen'
+GO
+
+CREATE FUNCTION PobierzSumeObciazen(@numer_wyciagu_var NVARCHAR(20))
+RETURNS MONEY
+AS
+BEGIN
+    DECLARE @suma_obciazen MONEY;
+
+    SELECT @suma_obciazen = SUM(kwota)
+    FROM WB_DET
+    WHERE kwota < 0
+      AND numer = @numer_wyciagu_var;
+
+    RETURN ISNULL(@suma_obciazen, 0);
+END;
+GO
+-- SELECT dbo.PobierzSumeObciazen('NumerWyciagu') AS SumaObciazen;
+EXEC dbo.create_empty_fun @fun_name = 'PobierzSumeUznan'
+GO
+
+CREATE FUNCTION PobierzSumeUznan(@numer_wyciagu_var NVARCHAR(20))
+RETURNS MONEY
+AS
+BEGIN
+    DECLARE @suma_obciazen MONEY;
+
+    SELECT @suma_obciazen = SUM(kwota)
+    FROM WB_DET
+    WHERE kwota > 0
+      AND numer = @numer_wyciagu_var;
+
+    RETURN ISNULL(@suma_obciazen, 0);
+END;
+GO
+
+--generate xml - for now i will focus on generating 1 report suppsoing i have 1 header with many positions
+-- then loop can be created to generate many xmls for many headers with many positions 
+
+GO
