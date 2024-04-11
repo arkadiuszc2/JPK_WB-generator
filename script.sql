@@ -1005,7 +1005,7 @@ GO
 EXEC dbo.create_empty_fun @fun_name = 'PobierzSumeObciazen'
 GO
 
-CREATE FUNCTION PobierzSumeObciazen(@numer_wyciagu_var NVARCHAR(20))
+ALTER FUNCTION PobierzSumeObciazen(@numer_wyciagu_var NVARCHAR(20))
 RETURNS MONEY
 AS
 BEGIN
@@ -1017,13 +1017,13 @@ BEGIN
       AND numer = @numer_wyciagu_var;
 
     RETURN ISNULL(@suma_obciazen, 0);
-END;
+END
 GO
 -- SELECT dbo.PobierzSumeObciazen('NumerWyciagu') AS SumaObciazen;
 EXEC dbo.create_empty_fun @fun_name = 'PobierzSumeUznan'
 GO
 
-CREATE FUNCTION PobierzSumeUznan(@numer_wyciagu_var NVARCHAR(20))
+ALTER FUNCTION PobierzSumeUznan(@numer_wyciagu_var NVARCHAR(20))
 RETURNS MONEY
 AS
 BEGIN
@@ -1035,6 +1035,26 @@ BEGIN
       AND numer = @numer_wyciagu_var;
 
     RETURN ISNULL(@suma_obciazen, 0);
+END
+GO
+
+EXEC dbo.create_empty_fun @fun_name = 'LiczbeWierszyDlaNumeru'
+GO
+
+ALTER FUNCTION LiczbaWierszyDlaNumeru
+(
+    @numer_wyciagu_var NVARCHAR(20)
+)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @liczbaWierszy INT;
+
+    SELECT @liczbaWierszy = COUNT(*)
+    FROM WB_DET
+    WHERE numer = @numer_wyciagu_var;
+
+    RETURN @liczbaWierszy;
 END;
 GO
 
