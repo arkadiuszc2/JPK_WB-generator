@@ -86,6 +86,7 @@ IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'PODMIOT'
 BEGIN
 	CREATE TABLE dbo.Podmiot 
 	(	PODMIOT_ID	nchar(4) NOT NULL CONSTRAINT PK_Podmiot PRIMARY KEY
+	,	NAZWA		nvarchar(240) NOT NULL
 	,	KodUrzedu	nvarchar(3) NOT NULL
 	,	NIP			nvarchar(10) NOT NULL
 	,	REGON		nvarchar(9) NOT NULL
@@ -108,6 +109,7 @@ BEGIN
 INSERT INTO dbo.Podmiot 
 (
     PODMIOT_ID, 
+	NAZWA,
     KodUrzedu, 
     NIP, 
     REGON, 
@@ -125,6 +127,7 @@ INSERT INTO dbo.Podmiot
 VALUES
 (
     '0001', 
+	'firma XXX',
     '026', 
     '1234567890', 
     '012345678', 
@@ -141,7 +144,8 @@ VALUES
 )
 INSERT INTO dbo.Podmiot 
 (
-    PODMIOT_ID, 
+    PODMIOT_ID,
+	NAZWA,
     KodUrzedu, 
     NIP, 
     REGON, 
@@ -158,7 +162,8 @@ INSERT INTO dbo.Podmiot
 )
 VALUES
 (
-    '0002', 
+    '0002',
+	'firma YYY',
     '026', 
     '0987654321', 
     '876543210', 
@@ -1055,10 +1060,164 @@ BEGIN
     WHERE numer = @numer_wyciagu_var;
 
     RETURN @liczbaWierszy;
-END;
+END
 GO
 
 --generate xml - for now i will focus on generating 1 report suppsoing i have 1 header with many positions
--- then loop can be created to generate many xmls for many headers with many positions 
+-- we specify number of bank statement which we want to report
+ALTER PROCEDURE [dbo].[JPK_FA_3]
+(       @numer	           nvarchar(20)
+,       @xml            xml                     = null output
+,       @return         nvarchar(20)	= N'xml'
+)
+AS
+SELECT
+                numer					AS numer_wyciagu
+        ,       i.numer_rach				AS numer_rachunku
+        ,       saldo_pocz						AS saldo_poczatkowe
+        ,       saldo_kon						AS saldo_koncowe
+        ,       waluta_rach						AS domyslny_kod_waluty
+        ,       data_utw							AS data_wytworzenia_jpk
+		,       data_od						AS data_od
+		,       data_do							AS data_do
+		, dbo.PobierzSumeObciazen(@number)	AS suma_obciazen
+		, dbo.PobierzSumeUznan(@number)	AS suma_uznan
+		, dbo.LiczbaWierszyDlaNumeru(@number)	AS liczba_wierszy
+				INTO #TI
+                FROM WB  i (NOLOCK)
+				join known_acc_num k (NOLOCK) ON (k.numer_rach = i.numer)
+                join Podmiot c (NOLOCK) ON (c.PODMIOT_ID = k.id_podmiotu)
+                WHERE (i.numer  = @numer) 
+                ORDER BY i.numer
+
+        SELECT
+                p.numer			AS numer_wyciagu
+        ,       p.lp			AS numer_wiersza
+		,		p.data			AS data_operacji
+        ,       p.kwota			AS kwota_operacji
+        ,       p.saldo_po		AS saldo_operacji
+        ,		p.nazwa_kontrahenta			AS nazwa_podmiotu
+        ,       p.opis			AS opis_operacji
+			INTO #TIT
+                FROM WB_DET  p (NOLOCK)
+				join WB f ON (p.numer = f.numer)
+				join known_acc_num k (NOLOCK) ON (k.numer_rach = f.numer)
+                join Podmiot c (NOLOCK) ON (c.PODMIOT_ID = k.id_podmiotu)
+                WHERE (f.numer  = @numer) 
+                ORDER BY f.numer
+				
+		SET @xml = null
+
+		;WITH XMLNAMESPACES(N'http://jpk.mf.gov.pl/wzor/2016/03/09/03092//'      AS tns
+			, N'http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/' AS etd
+			, N'http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/' AS kck)
+
+			 select @xml =
+
+        ( SELECT
+        ( SELECT
+          N'1-0'                  AS [tns:KodFormularza/@wersjaSchemy]    /* Schema veriosn, was fixed in XSD */
+        , N'JPK_WB (1)'         AS [tns:KodFormularza/@kodSystemowy]    /* System code, was fixed in XSD */
+        , N'JPK_WB'                     AS [tns:KodFormularza]                                  /* const */
+        , N'1'                          AS [tns:WariantFormularza]                              /* const */
+        , N'1'                          AS [tns:CelZlozenia]                                    /* 1 -handed in first time 1, 2 - correction*/
+        , GETDATE()						AS [tns:DataWytworzeniaJPK]                             /* creation date */
+        , w.data_od				AS [tns:DataOd]                                     
+        , w.data_do				AS [tns:DataDo]                                     
+		, w.waluta_rach			AS [tns:DomyslnyKodWaluty]
+		,c.KodUrzedu			AS [tns:KodUrzedu]
+                FROM WB (NOLOCK) w
+				join known_acc_num k (NOLOCK) ON (k.numer_rach = w.numer)
+                join Podmiot c (NOLOCK) ON (c.PODMIOT_ID = k.id_podmiotu)
+				WHERE (w.numer = @numer)
+        FOR XML PATH('tns:Naglowek'), TYPE
+        )
+        ,
+        (SELECT
+                ( SELECT s.NIP              AS [etd:NIP]
+                        ,s.NAZWA			AS [etd:PelnaNazwa]
+						, s.REGON			AS [etd:REGON]
+                        FROM Podmiot (NOLOCK) s 
+						join known_acc_num k (NOLOCK) ON (k.id_podmiotu = s.PODMIOT_ID)
+						join WB w (NOLOCK) ON (w.numer_rach = k.numer_rach)
+						WHERE (w.numer = @numer)
+                        FOR XML PATH('tns:IdentyfikatorPodmiotu'), TYPE
+                )
+                ,
+
+                ( SELECT		N'PL'				AS [etd:KodKraju]
+                        ,       s.Wojewodztwo       AS [etd:Wojewodztwo]
+                        ,       s.Powiat            AS [etd:Powiat]
+                        ,       s.gmina             AS [etd:Gmina]
+                        ,       s.Ulica             AS [etd:Ulica]
+                        ,       s.NrDomu 			AS [etd:NrDomu]
+                        ,       s.NrLokalu			AS [etd:NrLokalu]
+                        ,       s.Miejscowosc		AS [etd:Miejscowosc]
+                        ,       s.KodPocztowy		AS [etd:KodPocztowy]
+                        ,		s.Poczta			AS [etd:Poczta]
+                                FROM Podmiot (NOLOCK) s
+								join known_acc_num k (NOLOCK) ON (k.id_podmiotu = s.PODMIOT_ID)
+								join WB w (NOLOCK) ON (k.numer_rach = w.numer_rach)
+								WHERE (w.numer = @numer)
+                        FOR XML PATH('tns:AdresPodmiotu'), TYPE
+                )
+        FOR XML PATH('tns:Podmiot1'), TYPE
+        )
+        ,
+
+        (SELECT
+                (SELECT liczba_wierszy  AS [tns:LiczbaWierszy] 
+				,	suma_obciazen AS [tns:SumaObciazen]
+				, suma_obciazen AS [tns:SumaUznan]
+				FROM #TI t WHERE t.numer_wyciagu = @numer)
+                                                                               
+
+
+        FOR XML PATH('tns:WyciagCtrl'), TYPE 
+        ),
+
+		(SELECT
+                (SELECT saldo_poczatkowe  AS [tns:SaldoPoczatkowe] 
+				,	saldo_koncowe AS [tns:SaldoKoncowe]
+				FROM #TI t WHERE t.numer_rachunku = @numer)
+                                                                               
+
+
+        FOR XML PATH('tns:Salda'), TYPE 
+        ),
+
+		(SELECT
+                (SELECT numer_rachunku  AS [tns:NumerRachunku] 
+				FROM #TI t WHERE t.numer_rachunku = @numer)
+                                                                               
+
+
+        FOR XML PATH('tns:NumerRachunku'), TYPE 
+        )
+        ,
+        (SELECT numer_wiersza AS [tns:NumerWiersza]
+		, data_operacji AS [tns:DataOperacji]
+		, nazwa_podmiotu AS [tns:NazwaPodmiotu]
+		, opis_operacji AS [tns:OpisOperacji]
+		, kwota_operacji AS [tns:KwotaOperacji]
+		, saldo_operacji AS [tns:SaldoOperacji]
+                FROM #TIT t
+        FOR XML PATH('tns:WyciagWiersz'), TYPE
+        )
+        
+        FOR XML PATH(''), TYPE, ROOT('tns:JPK')
+        )
+		SET @xml.modify('declare namespace tns = "http://jpk.mf.gov.pl/wzor/2016/03/09/03092/"; insert attribute xsi:schemaLocation{"http://jpk.mf.gov.pl/wzor/2016/03/09/03092/ schema.xsd"} as last into (tns:JPK)[1]')
+
+        if @return = 'headers'
+                select i.* FROM #TI i
+        ELSE
+        if @return = 'details'
+                SELECT t.*
+                        FROM #TIT t
+        ELSE /* xml as default */
+                select @xml AS [xml]
 
 GO
+
+
