@@ -12,9 +12,7 @@ END
 
 USE jpkdb
 GO
--- drop procedure rmv_table
-/*create procedure to be able to use alter and not create later*/
-/* if we use create we cant run script multiple times without error */
+
 IF NOT EXISTS 
 	( SELECT 1 FROM sysobjects o
 		WHERE (o.[name] = 'rmv_table')
@@ -26,12 +24,6 @@ END
 GO
 
 ALTER PROCEDURE dbo.rmv_table (@tab_name nvarchar(100) )
-/* delete table if already exists
-query for test:
-
-create table dbo.test (aa int not null)
-exec rmv_table @tab_name = 'test'
-select * from test  */
 
 AS	
 /* check if obj exists and if its a table */
@@ -48,13 +40,12 @@ AS
 GO
 exec rmv_table @tab_name = 'tmp_wb_na'
 GO
---drop table dbo.tmp_wb_na
 
-/* data for now in text format, to ommit possible types excpetions connected with input data */
+/* data temporary in text format, to ommit possible types exceptions connected with input data */
 CREATE TABLE dbo.tmp_wb_na
 (	numer nvarchar(20) NOT NULL
 ,	data_utw nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
-,   numer_rach nvarchar(28) NOT NULL -- TODO: Change to IBAN
+,   numer_rach nvarchar(28) NOT NULL
 ,	waluta_rach nvarchar(3) NOT NULL
 ,	data_od nvarchar(10) NOT NULL
 ,	data_do nvarchar(10) NOT NULL
@@ -62,17 +53,8 @@ CREATE TABLE dbo.tmp_wb_na
 ,	saldo_kon nvarchar(20) NOT NULL
 )
 GO
---SELECT * FROM tmp_wb_na
- /* drop table tmp_wb_poz
-  drop table WB_DET
- drop table WB
- drop table known_acc_num
- drop table currency
- drop table dbo.Podmiot
- drop table dbo.tmp_wb_na
-  drop table ELOG_D
- drop table ELOG_N */
-exec rmv_table @tab_name = 'tmp_wb_poz'  -- is it necessary because ssis deletes tables before importing data??
+
+exec rmv_table @tab_name = 'tmp_wb_poz' 
 GO
 CREATE TABLE dbo.tmp_wb_poz
 (	numer nvarchar(20) NOT NULL
@@ -85,8 +67,7 @@ CREATE TABLE dbo.tmp_wb_poz
 )
 GO
 
--- create table with additional data neede for jpk but not provided in headers or positions
--- drop table Podmiot
+-- create table with additional data needed or jpk but not provided in headers or positions
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'PODMIOT'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
 )
@@ -110,6 +91,7 @@ BEGIN
 	)
 END
 GO
+
 -- fill table PODMIOT with test data
 IF NOT EXISTS ( SELECT 1 FROM Podmiot )
 BEGIN
@@ -186,9 +168,9 @@ VALUES
     'Warszawa' 
 )
 END
--- create list of currencies codes to validate if provided code is valid
 
--- it will be only valid if provided code exists in this list
+-- create list of currencies codes to validate if provided code is valid
+-- it will be valid only if provided code exists in this list
 GO
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'currency'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
@@ -200,7 +182,7 @@ BEGIN
 	,	symbol NVARCHAR(5)
 	)
 
-	-- Insert currency records
+	-- Insert currencies
 	INSERT INTO currency VALUES ('Leke', 'ALL', N'Lek');
 INSERT INTO currency VALUES ('Dollars', 'USD', N'$');
 INSERT INTO currency VALUES ('Afghanis', 'AFN', N'؋');
@@ -316,12 +298,7 @@ INSERT INTO currency VALUES ('Zimbabwe Dollars', 'ZWD', N'Z$');
 INSERT INTO currency VALUES ('Rupees', 'INR', N'₹');
 END
 GO
--- drop table currency
 
--- Select values from table                        
---SELECT * FROM currency;
-
---drop table known_acc_num
 --create table connecting podmiot with its account numbers (one podmiot can have multiple acc_num and create different bank statements)
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'known_acc_num'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
@@ -354,7 +331,7 @@ BEGIN
 END
 GO
 
--- Error Handling
+-- Validation error handling
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'ELOG_N'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
 )
@@ -368,9 +345,6 @@ BEGIN
 	) 
 END
 GO
---SELECT * FROM ELOG_N
-
--- TODO create WB and WB_DET tables
 
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'ELOG_D'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
@@ -385,7 +359,7 @@ BEGIN
 END
 GO
 
-/* final table for headers */
+-- create final headers table
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'WB'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
 )
@@ -393,9 +367,7 @@ BEGIN
 	CREATE TABLE dbo.WB
 	(	numer_rach 	nvarchar(28) NOT NULL CONSTRAINT FK_WB__known_acc_num FOREIGN KEY
 							REFERENCES known_acc_num(numer_rach)
-											/* with what account number its connected, knowing numer_rach whe know PODMIOT to from data in known_acc_num table */
-	,	numer		nvarchar(20)	NOT NULL CONSTRAINT PK_WB1 PRIMARY KEY
-											/* unique number for every bank statement */
+	,	numer		nvarchar(20)	NOT NULL CONSTRAINT PK_WB1 PRIMARY KEY /* unique number for every bank statement */
 	,	saldo_pocz  money	NOT NULL
 	,	saldo_kon	money	NOT NULL
 	,	waluta_rach nvarchar(3)	NOT NULL
@@ -405,8 +377,7 @@ BEGIN
 	)
 END
 GO
-
-/*final table for positions*/
+-- final table positions table
 IF NOT EXISTS ( SELECT 1  FROM sysobjects  o WHERE o.[name] = 'WB_DET'
 	AND (OBJECTPROPERTY(o.[ID], 'IsUserTable') = 1)  
 )
@@ -414,9 +385,9 @@ BEGIN
 
 	CREATE TABLE dbo.WB_DET
 	(	numer		nvarchar(20) NOT NULL CONSTRAINT FK_WB_DET__WB FOREIGN KEY
-							REFERENCES WB(numer)	/* number of connected bank statement */
+							REFERENCES WB(numer)	/* number of associated bank statement */
 	,	lp			int	NOT NULL CONSTRAINT PK_WB_DET PRIMARY KEY
-													/* to identify a position in one bank statement */
+													/* for identification a position in one bank statement */
 	,	data datetime NOT NULL
 	,	kwota money NOT NULL
 	,	saldo_po money NOT NULL
@@ -425,10 +396,6 @@ BEGIN
 	)
 	END
 	GO
-
-
-
-
 
 --data validation for tmp_na
 /* create empty procedure to be able to use alter later an run script multiple times */
@@ -446,8 +413,7 @@ END
 GO
 
 ALTER PROCEDURE dbo.create_empty_proc (@proc_name nvarchar(100))
-/* przekazujemy samą nazwę procedura sama dodaje dbo.
-*/
+
 AS
 	IF NOT EXISTS 
 	(	SELECT 1 
@@ -484,12 +450,6 @@ EXEC dbo.create_empty_fun 'txt2M'
 GO
 
 --convert text to money type
-/*test
-SELECT dbo.txt2M(N'123,456.89') -- 123456,89
-SELECT dbo.txt2M(N'123.456,89') -- 123456,89
-SELECT dbo.txt2M(N'123 456,89') -- 123456,89
-select dbo.txt2M(netto_fa),* from tmp_fa_na
-*/
 ALTER FUNCTION dbo.txt2M(@txt nvarchar(20) )
 RETURNS MONEY
 AS
@@ -514,12 +474,6 @@ EXEC dbo.create_empty_fun 'txt2D'
 GO
 
 -- convert data to date type
-/* test
-SELECT dbo.txt2D(N'2022-03-31') -- 2022-03-31 00:00:00.000
-SELECT dbo.txt2D(N'31/03/2022') -- 2022-03-31 00:00:00.000
-SELECT dbo.txt2D(N'20220331') -- 2022-03-31 00:00:00.000
-select dbo.txt2M(netto_fa),dbo.txt2D(data),* from tmp_fa_na
-*/
 
 ALTER FUNCTION dbo.txt2D(@txt nvarchar(10) )
 RETURNS DATETIME
@@ -545,7 +499,6 @@ GO
 
 EXEC dbo.create_empty_proc @proc_name = 'tmp_na_check'
 GO
--- EXEC dbo.tmp_na_check
 
 -- validate headers data
 ALTER PROCEDURE dbo.tmp_na_check(@err int = 0 output)
@@ -613,7 +566,6 @@ AS
 		SET @id_en = SCOPE_IDENTITY()
 
 		INSERT INTO ELOG_D(id_elog_n, opis_d)
-		/* 112 - yyyymmdd */
 			SELECT @id_en, 'Invalid dates in row. data_od: ' + CONVERT(nvarchar, data_od, 112) + ', data_do: ' + CONVERT(nvarchar, data_do, 112)
 			FROM tmp_wb_na
 			WHERE data_do < data_od
@@ -633,7 +585,6 @@ AS
 	SET @en = @en + 'Parameter data_utw must be a date after data_od or data_do!!!'
 		INSERT INTO ELOG_N(opis_n) VALUES (@en)
 		SET @id_en = SCOPE_IDENTITY()
-		/* suppose that date in in format dd.mm.yyyy */
 		INSERT INTO ELOG_D(id_elog_n, opis_d)
         SELECT @id_en, N'Invalid dates in row. data_utw: ' + CONVERT(nvarchar, data_utw, 112) 
 		+ ', data_od: ' + CONVERT(nvarchar, data_od, 112)
@@ -644,7 +595,6 @@ AS
 		RAISERROR(@en, 16, 4)
     RETURN -1
 	END
-	--TODO - it doesnt work
 --every date must be after current date
 	DECLARE @date_max datetime
 	SET @date_max = CONVERT(nvarchar(10), GETDATE(), 104) -- rok i mies z dzis
@@ -652,22 +602,10 @@ AS
 	OR dbo.txt2D(t.data_od)	>= @date_max
     OR dbo.txt2D(t.data_do)	>= @date_max 
 	)
-	/*SELECT * FROM tmp_wb_na
-	SELECT CONVERT(nchar(10), GETDATE(), 104)
-	SELECT CONVERT(nchar(10), t.data_od, 104) FROM tmp_wb_na t*/
-	/*
-	DECLARE @date_max datetime;
-	SET @date_max = dbo.txt2D(CONVERT(nvarchar(10), GETDATE(), 104)) -- rok i mies z dzis
- SELECT 1 FROM tmp_wb_na t WHERE dbo.txt2D(t.data_utw)>= @date_max 
-	OR dbo.txt2D(t.data_od)>= @date_max
-    OR dbo.txt2D(t.data_do)>= @date_max 
-	)
-	*/
 	BEGIN
 		SET @en = @en + 'Every date must be before current date!!!'
 		INSERT INTO ELOG_N(opis_n) VALUES (@en)
 		SET @id_en = SCOPE_IDENTITY()
-		/* suppose that date in in format dd.mm.yyyy */
 		INSERT INTO ELOG_D(id_elog_n, opis_d)
         SELECT 
             @id_en, 
@@ -685,7 +623,6 @@ AS
 		RETURN -1
 	END
 -- Check if currency in header has its matching code in currency table
-
 
 IF EXISTS (
     SELECT 1
@@ -747,9 +684,6 @@ BEGIN
 END
 GO
 
-	
--- TODO: data validation for tmp_poz
-
 EXEC dbo.create_empty_proc @proc_name = 'tmp_poz_check'
 GO
 
@@ -796,7 +730,7 @@ AS
 		RETURN -1
 	END
 
--- check if every postion have its header
+-- check if every position have its header
 SELECT @cnt = COUNT(*)
 		FROM tmp_wb_poz  n
 		WHERE NOT EXISTS 
@@ -824,7 +758,7 @@ SELECT @cnt = COUNT(*)
 		RETURN -1
 	END
 
--- check if date of the postions is between dates of the connected header
+-- check if date of the positions is between dates of the connected header
 
 	IF EXISTS (
     SELECT 1
@@ -860,7 +794,6 @@ END
 
 -- make a loop to create final tables with data for jpk
 
-	
 	DECLARE CC INSENSITIVE CURSOR FOR 
 		SELECT n.numer, n.numer_rach, n.waluta_rach
 			, dbo.txt2D(n.data_utw)		AS data_utw
@@ -888,8 +821,7 @@ END
 		/* insert bank statement header */
 		INSERT INTO WB (numer_rach, numer, saldo_kon, saldo_pocz, waluta_rach, data_utw, data_od, data_do)
 			VALUES (@numer_rach, @numer, @saldo_kon, @saldo_poc, @waluta_rach, @data_utw, @data_od, @data_do)
-		/* get id */
-		SELECT @err=@@ERROR /*, @id_wb = SCOPE_IDENTITY() */
+		SELECT @err=@@ERROR 
 
 		IF @err = 0
 		BEGIN
@@ -918,83 +850,9 @@ END
 	 END
 	 CLOSE CC
 	 DEALLOCATE CC
-	GO
--- SELECT * FROM tmp_wb_poz
--- SELECT * FROM tmp_wb_na
--- SELECT * FROM known_acc_num
+	G
 
-
--- create functions for preapring data for xml
-EXEC dbo.create_empty_fun @fun_name = 'SAFT_CLEAR_TXT'
-GO
-
-ALTER FUNCTION dbo.SAFT_CLEAR_TXT(@msg nvarchar(256) )
-/* clear text are from dangerous characters*/
-RETURNS nvarchar(256)
-AS
-BEGIN
-	IF (@msg IS NULL)  OR (RTRIM(@msg) = N'')
-		RETURN N''
-
-	SET @msg = LTRIM(RTRIM(@msg))
-	/* clear potentially dangerous characters for XML within the string */
-	SET @msg = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@msg,'\n',N' '),N'<',N'?'),N'>','?'),N':',N'?'),N'\',N'?')
-	SET @msg = REPLACE(@msg,N'/',N'!')
-	RETURN RTRIM(LEFT(@msg,255)) /* limit for SAFT text field is 255 */
-END
-GO
-
-EXEC dbo.create_empty_fun @fun_name = 'SAFT_CLEAR_VATID'
-GO
-
-ALTER FUNCTION dbo.SAFT_CLEAR_VATID(@vatid nvarchar(20) )
-RETURNS nvarchar(10)
-AS
-BEGIN
-	/* sometimes they are spaces and other chars in NIP, - and : */
-	/* NIP can have country prefix but jpk dont want to include it  */
-	SET @vatid = REPLACE(REPLACE(REPLACE(@vatid,N' ',N''),N':',''),N'-','')
-	SET @vatid = dbo.SAFT_CLEAR_TXT(@vatid)
-	/* clear potentially dangerous characters for XML within the string */
-	IF @vatid LIKE 'VATID%'
-		SET @vatid = RTRIM(SUBSTRING(@vatid,6,20))
-	IF (@vatid LIKE 'NIP%') OR (@vatid LIKE 'VAT%')
-		SET @vatid = RTRIM(SUBSTRING(@vatid,4,20))
-/* delete prefix if exists
-- in theory we shuld compare with ue countries dictionary */
-	IF @vatid LIKE N'[A-Z][A-Z][1-9]%'
-		SET @vatid = LTRIM(RTRIM(SUBSTRING(@vatid,3,20)))
-
-	RETURN LEFT(@vatid,10)
-END
-GO
-
-
-EXEC dbo.create_empty_fun @fun_name = 'SAFT_DEFAULT'
-GO
-
-ALTER FUNCTION dbo.SAFT_DEFAULT( @msg nvarchar(250), @default nvarchar(20)=N'brak' )
-/* sometimes we can type 'brak' in JPK when we dont have some info */
-RETURNS nvarchar(250)
-AS
-BEGIN
-	RETURN LTRIM(RTRIM(ISNULL(dbo.SAFT_NULL(@msg),@default)))
-END
-GO
-
-EXEC dbo.create_empty_fun @fun_name = 'SAFT_NULL'
-GO
-
-ALTER FUNCTION dbo.SAFT_NULL(@msg nvarchar(250) )
-RETURNS nvarchar(250)
-AS
-/* when text is empty but must be an XML NULL*/
-BEGIN
-	IF @msg IS NULL OR RTRIM(@msg)=N''
-		RETURN NULL
-	RETURN @msg
-END
-GO
+-- create functions for preparing data for xml
 
 EXEC dbo.create_empty_fun @fun_name = 'SAFT_DATE'
 GO
@@ -1038,7 +896,6 @@ BEGIN
     RETURN ISNULL(@suma_obciazen, 0);
 END
 GO
--- SELECT dbo.PobierzSumeObciazen('NumerWyciagu') AS SumaObciazen;
 EXEC dbo.create_empty_fun @fun_name = 'PobierzSumeUznan'
 GO
 
@@ -1090,14 +947,14 @@ AS
 SELECT
                 numer					AS numer_wyciagu
         ,       i.numer_rach				AS numer_rachunku
-        ,       saldo_pocz						AS saldo_poczatkowe
-        ,       saldo_kon						AS saldo_koncowe
+        ,       dbo.SAFT_GET_AMT(saldo_pocz)						AS saldo_poczatkowe
+        ,       dbo.SAFT_GET_AMT(saldo_kon)					AS saldo_koncowe
         ,       waluta_rach						AS domyslny_kod_waluty
-        ,       data_utw							AS data_wytworzenia_jpk
-		,       data_od						AS data_od
-		,       data_do							AS data_do
-		, dbo.PobierzSumeObciazen(@numer)	AS suma_obciazen
-		, dbo.PobierzSumeUznan(@numer)	AS suma_uznan
+        ,       dbo.SAFT_DATE(data_utw)							AS data_wytworzenia_jpk
+		,       dbo.SAFT_DATE(data_od)						AS data_od
+		,       dbo.SAFT_DATE(data_do)							AS data_do
+		, dbo.SAFT_GET_AMT(dbo.PobierzSumeObciazen(@numer))	AS suma_obciazen
+		, dbo.SAFT_GET_AMT(dbo.PobierzSumeUznan(@numer))	AS suma_uznan
 		, dbo.LiczbaWierszyDlaNumeru(@numer)	AS liczba_wierszy
 				INTO #TI
                 FROM WB  i (NOLOCK)
@@ -1109,9 +966,9 @@ SELECT
         SELECT
                 p.numer			AS numer_wyciagu
         ,       p.lp			AS numer_wiersza
-		,		p.data			AS data_operacji
-        ,       p.kwota			AS kwota_operacji
-        ,       p.saldo_po		AS saldo_operacji
+		,		dbo.SAFT_DATE(p.data)			AS data_operacji
+        ,       dbo.SAFT_GET_AMT(p.kwota)			AS kwota_operacji
+        ,       dbo.SAFT_GET_AMT(p.saldo_po)		AS saldo_operacji
         ,		p.nazwa_kontrahenta			AS nazwa_podmiotu
         ,       p.opis			AS opis_operacji
 			INTO #TIT
@@ -1236,14 +1093,3 @@ GO
 
 exec JPK_WB_1 @numer='12345AB6789'
 
-
--- SELECT * FROM tmp_wb_na
--- SELECT * FROM tmp_wb_poz
--- SELECT * FROM WB
--- SELECT * FROM WB_DET
--- SELECT * FROM Podmiot
-
--- SELECT * FROM ELOG_D
--- SELECT * FROM ELOG_N
--- SELECT * FROM #TI
--- SELECT 
