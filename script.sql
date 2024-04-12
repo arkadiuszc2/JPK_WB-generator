@@ -530,7 +530,6 @@ AS
 	SELECT @totalRows = COUNT(*) FROM tmp_wb_na
 	
 	SELECT @uniqueNum = COUNT(DISTINCT numer) FROM tmp_wb_na
-	SELECT * FROM tmp_wb_na  -- here
 	IF @uniqueNum < @totalRows 
 	BEGIN
 		SET @en = @en + 'Bank statement number must be unique !!!'
@@ -778,7 +777,8 @@ BEGIN
     SET @id_en = SCOPE_IDENTITY()
     
     INSERT INTO ELOG_D(id_elog_n, opis_d) 
-        SELECT DISTINCT @id_en, 'Invalid date in position of bank statement with number: ' + poz.numer + ', Invalid date: ' + CONVERT(nvarchar, poz.data, 120)
+        SELECT DISTINCT @id_en, 'Invalid date in position of bank statement with number: ' 
+		+ poz.numer + ', Invalid date: ' + CONVERT(nvarchar, poz.data, 120)
         FROM tmp_wb_poz poz
         WHERE NOT EXISTS (
             SELECT 1
@@ -1052,7 +1052,7 @@ SELECT
 				FROM #TI t WHERE t.numer_wyciagu = @numer                                                                               
 
 
-        FOR XML PATH('tns:Salda'), TYPE, ROOT('JPK') 
+        FOR XML PATH('tns:Salda'), TYPE 
         ),
 
 		(SELECT numer_wiersza AS [tns:NumerWiersza]
@@ -1092,4 +1092,3 @@ SELECT
 GO
 
 exec JPK_WB_1 @numer='12345AB6789'
-
