@@ -63,13 +63,20 @@ CREATE TABLE dbo.tmp_wb_na
 )
 GO
 --SELECT * FROM tmp_wb_na
--- drop table tmp_wb_poz
+ /* drop table tmp_wb_poz
+  drop table WB_DET
+ drop table WB
+ drop table known_acc_num
+ drop table currency
+ drop table dbo.Podmiot
+ drop table dbo.tmp_wb_na
+  drop table ELOG_D
+ drop table ELOG_N */
 exec rmv_table @tab_name = 'tmp_wb_poz'  -- is it necessary because ssis deletes tables before importing data??
 GO
 CREATE TABLE dbo.tmp_wb_poz
 (	numer nvarchar(20) NOT NULL
-,	lp int NOT NULL
-,	numer_wiersza nvarchar(20) NOT NULL
+,	lp nvarchar(20) NOT NULL
 ,	data nvarchar(10) NOT NULL /* date in format RRRR.MM.DD or DD.MM.RRRR */
 ,	kwota nvarchar(20) NOT NULL
 ,	saldo_po nvarchar(20) NOT NULL
@@ -569,7 +576,7 @@ AS
 	SELECT @totalRows = COUNT(*) FROM tmp_wb_na
 	
 	SELECT @uniqueNum = COUNT(DISTINCT numer) FROM tmp_wb_na
-	
+	SELECT * FROM tmp_wb_na  -- here
 	IF @uniqueNum < @totalRows 
 	BEGIN
 		SET @en = @en + 'Bank statement number must be unique !!!'
@@ -618,11 +625,11 @@ AS
 
 	SELECT @InvalidDatesCount = COUNT(*)
 	FROM tmp_wb_na
-	WHERE data_od < data_utw
+	WHERE data_od > data_utw AND data_do > data_utw
 
 	IF @InvalidDatesCount > 0
 	BEGIN
-	SET @en = @en + 'Paramter data_utw must be a date before data_od !!!'
+	SET @en = @en + 'Parameter data_utw must be a date after data_od or data_do!!!'
 		INSERT INTO ELOG_N(opis_n) VALUES (@en)
 		SET @id_en = SCOPE_IDENTITY()
 		/* suppose that date in in format dd.mm.yyyy */
@@ -630,20 +637,20 @@ AS
         SELECT @id_en, N'Invalid dates in row. data_utw: ' + CONVERT(nvarchar, data_utw, 112) 
 		+ ', data_od: ' + CONVERT(nvarchar, data_od, 112)
         FROM tmp_wb_na
-        WHERE data_od < data_utw
+        WHERE data_od > data_utw AND data_do > data_utw
 
 		SET @err = 1
 		RAISERROR(@en, 16, 4)
     RETURN -1
 	END
+	--TODO - it doesnt work
 --every date must be after current date
-
-	DECLARE @date_max nchar(8)
-	SET @date_max = CONVERT(nchar(8), GETDATE(), 112) -- rok i mies z dzis
-
-	IF EXISTS ( SELECT 1 FROM tmp_wb_na t WHERE t.data_utw >= @date_max 
-	OR t.data_od >= @date_max
-    OR t.data_do >= @date_max 
+	
+	/*DECLARE @date_max nchar(8)
+	SET @date_max = CONVERT(nchar(8), GETDATE(), 104) -- rok i mies z dzis
+	IF EXISTS ( SELECT 1 FROM tmp_wb_na t WHERE CONVERT(nchar(8), t.data_utw, 112) >= @date_max 
+	OR CONVERT(nchar(8), t.data_od, 112) >= @date_max
+    OR CONVERT(nchar(8), t.data_do, 112) >= @date_max 
 	)
 	BEGIN
 		SET @en = @en + 'Every date must be before current date!!!'
@@ -665,7 +672,7 @@ AS
 			SET @err = 1
 			RAISERROR(@en, 16, 4)
 		RETURN -1
-	END
+	END*/
 -- Check if currency in header has its matching code in currency table
 
 
@@ -868,7 +875,7 @@ END
 			SAVE TRAN TR_POZ_NA
 
 		/* insert bank statement header */
-		INSERT INTO WB (numer_rach, numer, saldo_kon, saldo_kon, waluta_rach, data_utw, data_od, data_do)
+		INSERT INTO WB (numer_rach, numer, saldo_kon, saldo_pocz, waluta_rach, data_utw, data_od, data_do)
 			VALUES (@numer_rach, @numer, @saldo_kon, @saldo_poc, @waluta_rach, @data_utw, @data_od, @data_do)
 		/* get id */
 		SELECT @err=@@ERROR /*, @id_wb = SCOPE_IDENTITY() */
@@ -888,12 +895,12 @@ END
 
 			SET @err = @@ERROR 
 		END
-		IF @err = 0 /* wszystko OK */
+		IF @err = 0 /* OK */
 		BEGIN
-			IF @trCnt = 0 /* zapisz zmiany */
+			IF @trCnt = 0 /* save changes */
 				COMMIT TRAN TR_POZ_NA
 		END 
-		ELSE /* odwołaj zmiany */
+		ELSE /* return changes */
 			ROLLBACK TRAN TR_POZ_NA
 
 		FETCH NEXT FROM CC INTO @numer, @numer_rach, @waluta_rach, @data_utw, @data_od, @data_do, @saldo_poc, @saldo_kon
@@ -904,10 +911,6 @@ END
 -- SELECT * FROM tmp_wb_poz
 -- SELECT * FROM tmp_wb_na
 -- SELECT * FROM known_acc_num
-
--- Whate can be done to imrpove in future: list all types of jpk_wb and create procedure which choose type and takes as second and third argument dates of the bank statement to be then able too choose which bank statemnt
--- from our data take to generate report
-
 
 
 -- create functions for preapring data for xml
@@ -1043,7 +1046,7 @@ BEGIN
 END
 GO
 
-EXEC dbo.create_empty_fun @fun_name = 'LiczbeWierszyDlaNumeru'
+EXEC dbo.create_empty_fun @fun_name = 'LiczbaWierszyDlaNumeru'
 GO
 
 ALTER FUNCTION LiczbaWierszyDlaNumeru
@@ -1062,10 +1065,13 @@ BEGIN
     RETURN @liczbaWierszy;
 END
 GO
+EXEC dbo.create_empty_proc @proc_name = 'JPK_WB_1'
+GO
+
 
 --generate xml - for now i will focus on generating 1 report suppsoing i have 1 header with many positions
 -- we specify number of bank statement which we want to report
-ALTER PROCEDURE [dbo].[JPK_FA_3]
+ALTER PROCEDURE [dbo].[JPK_WB_1]
 (       @numer	           nvarchar(20)
 ,       @xml            xml                     = null output
 ,       @return         nvarchar(20)	= N'xml'
@@ -1080,9 +1086,9 @@ SELECT
         ,       data_utw							AS data_wytworzenia_jpk
 		,       data_od						AS data_od
 		,       data_do							AS data_do
-		, dbo.PobierzSumeObciazen(@number)	AS suma_obciazen
-		, dbo.PobierzSumeUznan(@number)	AS suma_uznan
-		, dbo.LiczbaWierszyDlaNumeru(@number)	AS liczba_wierszy
+		, dbo.PobierzSumeObciazen(@numer)	AS suma_obciazen
+		, dbo.PobierzSumeUznan(@numer)	AS suma_uznan
+		, dbo.LiczbaWierszyDlaNumeru(@numer)	AS liczba_wierszy
 				INTO #TI
                 FROM WB  i (NOLOCK)
 				join known_acc_num k (NOLOCK) ON (k.numer_rach = i.numer)
@@ -1165,30 +1171,26 @@ SELECT
         )
         ,
 
-        (SELECT
-                (SELECT liczba_wierszy  AS [tns:LiczbaWierszy] 
+        (SELECT liczba_wierszy  AS [tns:LiczbaWierszy] 
 				,	suma_obciazen AS [tns:SumaObciazen]
 				, suma_obciazen AS [tns:SumaUznan]
-				FROM #TI t WHERE t.numer_wyciagu = @numer)
+				FROM #TI t WHERE t.numer_wyciagu = @numer
                                                                                
 
 
         FOR XML PATH('tns:WyciagCtrl'), TYPE 
         ),
 
-		(SELECT
-                (SELECT saldo_poczatkowe  AS [tns:SaldoPoczatkowe] 
+		(SELECT saldo_poczatkowe  AS [tns:SaldoPoczatkowe] 
 				,	saldo_koncowe AS [tns:SaldoKoncowe]
-				FROM #TI t WHERE t.numer_rachunku = @numer)
-                                                                               
+				FROM #TI t WHERE t.numer_rachunku = @numer                                                                               
 
 
         FOR XML PATH('tns:Salda'), TYPE 
         ),
 
-		(SELECT
-                (SELECT numer_rachunku  AS [tns:NumerRachunku] 
-				FROM #TI t WHERE t.numer_rachunku = @numer)
+		(SELECT numer_rachunku  AS [tns:NumerRachunku] 
+				FROM #TI t WHERE t.numer_rachunku = @numer
                                                                                
 
 
@@ -1220,4 +1222,11 @@ SELECT
 
 GO
 
+exec JPK_WB_1 @numer='12345AB6789'
 
+
+-- SELECT * FROM tmp_wb_na
+-- SELECT * FROM tmp_wb_poz
+
+-- SELECT * FROM ELOG_D
+-- SELECT * FROM ELOG_N

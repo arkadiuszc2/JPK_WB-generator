@@ -1,25 +1,26 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
   DTS:refId="Package"
-  DTS:CreationDate="4/8/2024 9:38:34 PM"
+  DTS:CreationDate="4/12/2024 1:47:02 AM"
   DTS:CreationName="Microsoft.Package"
   DTS:CreatorComputerName="ARKPC"
   DTS:CreatorName="ARKPC\bushi"
   DTS:Description="SSIS Package Description"
-  DTS:DTSID="{A8164905-4FED-40A7-B142-54708AE146EC}"
+  DTS:DTSID="{EE4F5EB9-4A18-438C-B901-0707EF8BE378}"
   DTS:ExecutableType="Microsoft.Package"
-  DTS:LastModifiedProductVersion="16.0.1000.6"
+  DTS:LastModifiedProductVersion="16.0.5397.1"
   DTS:LocaleID="1045"
   DTS:MaxErrorCount="0"
   DTS:ObjectName="WB_POZ"
-  DTS:VersionGUID="{77630FD9-CF8C-4573-A567-5DCFC19D7DCE}">
+  DTS:VersionBuild="2"
+  DTS:VersionGUID="{7B55D445-03BB-40F9-9CD8-C40D695E312D}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[DestinationConnectionOLEDB]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{A478AE89-9A8D-49D5-AB52-159DF504E2EE}"
+      DTS:DTSID="{E6927F70-67B4-418B-B31C-C5578468D567}"
       DTS:ObjectName="DestinationConnectionOLEDB">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -31,7 +32,7 @@
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[SourceConnectionFlatFile]"
       DTS:CreationName="FLATFILE"
-      DTS:DTSID="{1ED12C40-6020-4E4A-9AFF-8628527E5997}"
+      DTS:DTSID="{4C98F9C1-1285-4E1C-B94E-0D2393597D8E}"
       DTS:ObjectName="SourceConnectionFlatFile">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -52,7 +53,16 @@
               DTS:DataType="130"
               DTS:TextQualified="True"
               DTS:ObjectName="numer"
-              DTS:DTSID="{67844CB2-72E0-4B0A-B675-30F6B5A0DAE4}"
+              DTS:DTSID="{5B6D4A1A-2DD7-4C4C-B8DC-7FB4EBBA873A}"
+              DTS:CreationName="" />
+            <DTS:FlatFileColumn
+              DTS:ColumnType="Delimited"
+              DTS:ColumnDelimiter="_x0009_"
+              DTS:MaximumWidth="20"
+              DTS:DataType="130"
+              DTS:TextQualified="True"
+              DTS:ObjectName="lp"
+              DTS:DTSID="{5FDD1E3C-107F-4009-8CB9-BE25BDEEA7CA}"
               DTS:CreationName="" />
             <DTS:FlatFileColumn
               DTS:ColumnType="Delimited"
@@ -61,7 +71,7 @@
               DTS:DataType="130"
               DTS:TextQualified="True"
               DTS:ObjectName="data"
-              DTS:DTSID="{84A8AEFE-AB73-4D7D-917D-F95B55306582}"
+              DTS:DTSID="{828E02C5-CB45-4000-8790-11E9EF5956AF}"
               DTS:CreationName="" />
             <DTS:FlatFileColumn
               DTS:ColumnType="Delimited"
@@ -70,7 +80,7 @@
               DTS:DataType="130"
               DTS:TextQualified="True"
               DTS:ObjectName="kwota"
-              DTS:DTSID="{341CA4EF-C78C-42B2-8D42-99FE76D0EDC7}"
+              DTS:DTSID="{2DDCE57C-D63F-4883-A111-C121611CEEB9}"
               DTS:CreationName="" />
             <DTS:FlatFileColumn
               DTS:ColumnType="Delimited"
@@ -79,7 +89,16 @@
               DTS:DataType="130"
               DTS:TextQualified="True"
               DTS:ObjectName="saldo_po"
-              DTS:DTSID="{DE77BC0B-0F5C-4682-A261-D62D021C8B14}"
+              DTS:DTSID="{DB2995CC-CC3D-41D9-8F0C-DDA74D3DBA2E}"
+              DTS:CreationName="" />
+            <DTS:FlatFileColumn
+              DTS:ColumnType="Delimited"
+              DTS:ColumnDelimiter="_x0009_"
+              DTS:MaximumWidth="256"
+              DTS:DataType="130"
+              DTS:TextQualified="True"
+              DTS:ObjectName="nazwa_kontrahenta"
+              DTS:DTSID="{8367C2AA-CB93-438C-868E-2427140A0C27}"
               DTS:CreationName="" />
             <DTS:FlatFileColumn
               DTS:ColumnType="Delimited"
@@ -88,7 +107,7 @@
               DTS:DataType="130"
               DTS:TextQualified="True"
               DTS:ObjectName="opis"
-              DTS:DTSID="{C0E5153D-FC4D-45A0-9EB0-BD27A522F559}"
+              DTS:DTSID="{993246B9-A29E-4F8A-A799-5F7061798D78}"
               DTS:CreationName="" />
           </DTS:FlatFileColumns>
         </DTS:ConnectionManager>
@@ -101,7 +120,7 @@
       DTS:refId="Package\Data Flow Task 1"
       DTS:CreationName="Microsoft.Pipeline"
       DTS:DelayValidation="True"
-      DTS:DTSID="{98283307-23BF-412D-A01D-8017091C226B}"
+      DTS:DTSID="{91088F93-EA4D-45A1-B4B8-EF7DC3EC6159}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:FailPackageOnFailure="True"
       DTS:LocaleID="-1"
@@ -130,7 +149,7 @@
                 <property
                   dataType="System.String"
                   description="Specifies the name of the database object used to open a rowset."
-                  name="OpenRowset">[dbo].[temp_wb_poz]</property>
+                  name="OpenRowset">[dbo].[tmp_wb_poz]</property>
                 <property
                   dataType="System.String"
                   description="Specifies the variable that contains the name of the database object used to open a rowset."
@@ -194,6 +213,13 @@
                       externalMetadataColumnId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].ExternalColumns[numer]"
                       lineageId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[numer]" />
                     <inputColumn
+                      refId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].Columns[lp]"
+                      cachedDataType="wstr"
+                      cachedLength="20"
+                      cachedName="lp"
+                      externalMetadataColumnId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].ExternalColumns[lp]"
+                      lineageId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[lp]" />
+                    <inputColumn
                       refId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].Columns[data]"
                       cachedDataType="wstr"
                       cachedLength="10"
@@ -215,6 +241,13 @@
                       externalMetadataColumnId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].ExternalColumns[saldo_po]"
                       lineageId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[saldo_po]" />
                     <inputColumn
+                      refId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].Columns[nazwa_kontrahenta]"
+                      cachedDataType="wstr"
+                      cachedLength="256"
+                      cachedName="nazwa_kontrahenta"
+                      externalMetadataColumnId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].ExternalColumns[nazwa_kontrahenta]"
+                      lineageId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[nazwa_kontrahenta]" />
+                    <inputColumn
                       refId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].Columns[opis]"
                       cachedDataType="wstr"
                       cachedLength="256"
@@ -230,6 +263,11 @@
                       length="20"
                       name="numer" />
                     <externalMetadataColumn
+                      refId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].ExternalColumns[lp]"
+                      dataType="wstr"
+                      length="20"
+                      name="lp" />
+                    <externalMetadataColumn
                       refId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].ExternalColumns[data]"
                       dataType="wstr"
                       length="10"
@@ -244,6 +282,11 @@
                       dataType="wstr"
                       length="20"
                       name="saldo_po" />
+                    <externalMetadataColumn
+                      refId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].ExternalColumns[nazwa_kontrahenta]"
+                      dataType="wstr"
+                      length="256"
+                      name="nazwa_kontrahenta" />
                     <externalMetadataColumn
                       refId="Package\Data Flow Task 1\Destination - temp_wb_poz.Inputs[Destination Input].ExternalColumns[opis]"
                       dataType="wstr"
@@ -330,6 +373,27 @@
                       </properties>
                     </outputColumn>
                     <outputColumn
+                      refId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[lp]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].ExternalColumns[lp]"
+                      length="20"
+                      lineageId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[lp]"
+                      name="lp"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          dataType="System.Boolean"
+                          description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                          name="FastParse">false</property>
+                        <property
+                          dataType="System.Boolean"
+                          description="Indicates whether the data is in binary format."
+                          name="UseBinaryFormat">false</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
                       refId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[data]"
                       dataType="wstr"
                       errorOrTruncationOperation="Conversion"
@@ -393,6 +457,27 @@
                       </properties>
                     </outputColumn>
                     <outputColumn
+                      refId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[nazwa_kontrahenta]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].ExternalColumns[nazwa_kontrahenta]"
+                      length="256"
+                      lineageId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[nazwa_kontrahenta]"
+                      name="nazwa_kontrahenta"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          dataType="System.Boolean"
+                          description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                          name="FastParse">false</property>
+                        <property
+                          dataType="System.Boolean"
+                          description="Indicates whether the data is in binary format."
+                          name="UseBinaryFormat">false</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
                       refId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].Columns[opis]"
                       dataType="wstr"
                       errorOrTruncationOperation="Conversion"
@@ -422,6 +507,11 @@
                       length="20"
                       name="numer" />
                     <externalMetadataColumn
+                      refId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].ExternalColumns[lp]"
+                      dataType="wstr"
+                      length="20"
+                      name="lp" />
+                    <externalMetadataColumn
                       refId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].ExternalColumns[data]"
                       dataType="wstr"
                       length="10"
@@ -436,6 +526,11 @@
                       dataType="wstr"
                       length="20"
                       name="saldo_po" />
+                    <externalMetadataColumn
+                      refId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].ExternalColumns[nazwa_kontrahenta]"
+                      dataType="wstr"
+                      length="256"
+                      name="nazwa_kontrahenta" />
                     <externalMetadataColumn
                       refId="Package\Data Flow Task 1\Source - jpk_wb_poz_txt.Outputs[Flat File Source Output].ExternalColumns[opis]"
                       dataType="wstr"
@@ -483,30 +578,244 @@
       </DTS:ObjectData>
     </DTS:Executable>
     <DTS:Executable
-      DTS:refId="Package\Preparation SQL Task 1"
+      DTS:refId="Package\Delete file"
+      DTS:CreationName="Microsoft.FileSystemTask"
+      DTS:Description="Delete source file after transfer data to db"
+      DTS:DTSID="{D629CB5D-F258-4E64-A84A-8FC49116240B}"
+      DTS:ExecutableType="Microsoft.FileSystemTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Delete file"
+      DTS:TaskContact="File System Task;Microsoft Corporation; SQL Server 2022; © 2022 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <FileSystemData
+          TaskOperationType="DeleteFile"
+          TaskSourcePath="{4C98F9C1-1285-4E1C-B94E-0D2393597D8E}" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Remove old data"
       DTS:CreationName="Microsoft.ExecuteSQLTask"
-      DTS:DTSID="{9F3E2803-B42F-4BCE-89FB-3839CF0C85B0}"
+      DTS:Description="Delete ol data from temporary table"
+      DTS:DTSID="{E4ACF724-FA7C-415B-A465-BC3A7C4E1A85}"
       DTS:ExecutableType="Microsoft.ExecuteSQLTask"
       DTS:FailPackageOnFailure="True"
       DTS:LocaleID="-1"
-      DTS:ObjectName="Preparation SQL Task 1"
+      DTS:ObjectName="Remove old data"
       DTS:ThreadHint="0">
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
-          SQLTask:Connection="{A478AE89-9A8D-49D5-AB52-159DF504E2EE}"
-          SQLTask:SqlStatementSource="CREATE TABLE [dbo].[temp_wb_poz] (&#xA;[numer] nvarchar(20),&#xA;[data] nvarchar(10),&#xA;[kwota] nvarchar(20),&#xA;[saldo_po] nvarchar(20),&#xA;[opis] nvarchar(256)&#xA;)&#xA;GO&#xA;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:Connection="{E6927F70-67B4-418B-B31C-C5578468D567}"
+          SQLTask:SqlStatementSource="DELETE FROM [dbo].[tmp_wb_poz]" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Validation"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Data validation"
+      DTS:DTSID="{00C21BD0-9267-4402-9C94-029DD8FC82B9}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Validation"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{E6927F70-67B4-418B-B31C-C5578468D567}"
+          SQLTask:SqlStatementSource="EXEC tmp_poz_check" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
   </DTS:Executables>
   <DTS:PrecedenceConstraints>
     <DTS:PrecedenceConstraint
-      DTS:refId="Package.PrecedenceConstraints[{E558FD8C-E430-4BFF-8DBB-6487F012DB1C\}]"
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
       DTS:CreationName=""
-      DTS:DTSID="{E558FD8C-E430-4BFF-8DBB-6487F012DB1C}"
-      DTS:From="Package\Preparation SQL Task 1"
+      DTS:DTSID="{E5BB67DD-BBF9-496C-A32E-0DC45A4485EA}"
+      DTS:From="Package\Data Flow Task 1"
       DTS:LogicalAnd="True"
-      DTS:ObjectName="{E558FD8C-E430-4BFF-8DBB-6487F012DB1C}"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\Validation" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{32E21C5D-C23F-44C5-8771-5CEA61B4544A}"
+      DTS:From="Package\Validation"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\Delete file" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{6F28F9FD-B1C9-41E5-9951-54523F7F0E9E\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{6F28F9FD-B1C9-41E5-9951-54523F7F0E9E}"
+      DTS:From="Package\Remove old data"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{6F28F9FD-B1C9-41E5-9951-54523F7F0E9E}"
       DTS:To="Package\Data Flow Task 1" />
   </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="8" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="164,42"
+          Id="Package\Data Flow Task 1"
+          TopLeft="21,285.5" />
+        <NodeLayout
+          Size="128,42"
+          Id="Package\Delete file"
+          TopLeft="13.5,463.5" />
+        <NodeLayout
+          Size="197,42"
+          Id="Package\Remove old data"
+          TopLeft="8.50000000000001,200.5" />
+        <NodeLayout
+          Size="126,42"
+          Id="Package\Validation"
+          TopLeft="34.5,379.5" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="100.25,327.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,52"
+              Start="0,0"
+              End="0,44.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,44.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="97.5,421.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-20,42"
+              Start="0,0"
+              End="-20,34.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,17" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,17"
+                    Point2="0,21"
+                    Point3="-4,21" />
+                  <mssgle:LineSegment
+                    End="-16,21" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-16,21"
+                    Point2="-20,21"
+                    Point3="-20,25" />
+                  <mssgle:LineSegment
+                    End="-20,34.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[{6F28F9FD-B1C9-41E5-9951-54523F7F0E9E\}]"
+          TopLeft="105,242.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,43"
+              Start="0,0"
+              End="0,35.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,35.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\Data Flow Task 1">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        <NodeLayout
+          Size="199,42"
+          Id="Package\Data Flow Task 1\Source - jpk_wb_poz_txt"
+          TopLeft="12,5.5" />
+        <NodeLayout
+          Size="212,42"
+          Id="Package\Data Flow Task 1\Destination - temp_wb_poz"
+          TopLeft="5.50000000000001,107.5" />
+        <EdgeLayout
+          Id="Package\Data Flow Task 1.Paths[Flat File Source Output]"
+          TopLeft="111.5,47.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,60"
+              Start="0,0"
+              End="0,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-15.45359375,21.4658203125,30.9071875,9.568359375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Data Flow Task 1\Destination - temp_wb_poz">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
 </DTS:Executable>
