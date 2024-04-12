@@ -415,7 +415,7 @@ BEGIN
 	CREATE TABLE dbo.WB_DET
 	(	numer		nvarchar(20) NOT NULL CONSTRAINT FK_WB_DET__WB FOREIGN KEY
 							REFERENCES WB(numer)	/* number of connected bank statement */
-	,	lp			int	NOT NULL IDENTITY CONSTRAINT PK_WB_DET PRIMARY KEY
+	,	lp			int	NOT NULL CONSTRAINT PK_WB_DET PRIMARY KEY
 													/* to identify a position in one bank statement */
 	,	data datetime NOT NULL
 	,	kwota money NOT NULL
@@ -545,6 +545,7 @@ GO
 
 EXEC dbo.create_empty_proc @proc_name = 'tmp_na_check'
 GO
+-- EXEC dbo.tmp_na_check
 
 -- validate headers data
 ALTER PROCEDURE dbo.tmp_na_check(@err int = 0 output)
@@ -645,13 +646,23 @@ AS
 	END
 	--TODO - it doesnt work
 --every date must be after current date
-	
-	/*DECLARE @date_max nchar(8)
-	SET @date_max = CONVERT(nchar(8), GETDATE(), 104) -- rok i mies z dzis
-	IF EXISTS ( SELECT 1 FROM tmp_wb_na t WHERE CONVERT(nchar(8), t.data_utw, 112) >= @date_max 
-	OR CONVERT(nchar(8), t.data_od, 112) >= @date_max
-    OR CONVERT(nchar(8), t.data_do, 112) >= @date_max 
+	DECLARE @date_max datetime
+	SET @date_max = CONVERT(nvarchar(10), GETDATE(), 104) -- rok i mies z dzis
+	IF EXISTS ( SELECT 1 FROM tmp_wb_na t WHERE dbo.txt2D(t.data_utw)>= @date_max 
+	OR dbo.txt2D(t.data_od)	>= @date_max
+    OR dbo.txt2D(t.data_do)	>= @date_max 
 	)
+	/*SELECT * FROM tmp_wb_na
+	SELECT CONVERT(nchar(10), GETDATE(), 104)
+	SELECT CONVERT(nchar(10), t.data_od, 104) FROM tmp_wb_na t*/
+	/*
+	DECLARE @date_max datetime;
+	SET @date_max = dbo.txt2D(CONVERT(nvarchar(10), GETDATE(), 104)) -- rok i mies z dzis
+ SELECT 1 FROM tmp_wb_na t WHERE dbo.txt2D(t.data_utw)>= @date_max 
+	OR dbo.txt2D(t.data_od)>= @date_max
+    OR dbo.txt2D(t.data_do)>= @date_max 
+	)
+	*/
 	BEGIN
 		SET @en = @en + 'Every date must be before current date!!!'
 		INSERT INTO ELOG_N(opis_n) VALUES (@en)
@@ -665,14 +676,14 @@ AS
             ', data_do: ' + CONVERT(nvarchar, t.data_do, 112)
         FROM tmp_wb_na t
         WHERE 
-            CONVERT(nchar(8), t.data_utw, 112) >= @date_max 
-            OR CONVERT(nchar(8), t.data_od, 112) >= @date_max
-            OR CONVERT(nchar(8), t.data_do, 112) >= @date_max 
+            dbo.txt2D(t.data_utw)>= @date_max 
+			OR dbo.txt2D(t.data_od)	 >= @date_max
+			OR dbo.txt2D(t.data_do)	 >= @date_max 
 
 			SET @err = 1
 			RAISERROR(@en, 16, 4)
 		RETURN -1
-	END*/
+	END
 -- Check if currency in header has its matching code in currency table
 
 
@@ -886,11 +897,11 @@ END
 			INSERT INTO WB_DET ( numer, lp, data, kwota, saldo_po, nazwa_kontrahenta, opis)
 			SELECT @numer, 
 			t.lp
-			, dbo.txt2M(t.data) 
+			, dbo.txt2D(t.data) 
 			, t.kwota
 			, dbo.txt2M(t.saldo_po)
 			, t.nazwa_kontrahenta
-			, dbo.txt2M(t.opis)
+			, t.opis
 			FROM dbo.tmp_wb_poz t
 
 			SET @err = @@ERROR 
@@ -1036,7 +1047,6 @@ RETURNS MONEY
 AS
 BEGIN
     DECLARE @suma_obciazen MONEY;
-
     SELECT @suma_obciazen = SUM(kwota)
     FROM WB_DET
     WHERE kwota > 0
@@ -1091,7 +1101,7 @@ SELECT
 		, dbo.LiczbaWierszyDlaNumeru(@numer)	AS liczba_wierszy
 				INTO #TI
                 FROM WB  i (NOLOCK)
-				join known_acc_num k (NOLOCK) ON (k.numer_rach = i.numer)
+				join known_acc_num k (NOLOCK) ON (k.numer_rach = i.numer_rach)
                 join Podmiot c (NOLOCK) ON (c.PODMIOT_ID = k.id_podmiotu)
                 WHERE (i.numer  = @numer) 
                 ORDER BY i.numer
@@ -1107,7 +1117,7 @@ SELECT
 			INTO #TIT
                 FROM WB_DET  p (NOLOCK)
 				join WB f ON (p.numer = f.numer)
-				join known_acc_num k (NOLOCK) ON (k.numer_rach = f.numer)
+				join known_acc_num k (NOLOCK) ON (k.numer_rach = f.numer_rach)
                 join Podmiot c (NOLOCK) ON (c.PODMIOT_ID = k.id_podmiotu)
                 WHERE (f.numer  = @numer) 
                 ORDER BY f.numer
@@ -1116,7 +1126,8 @@ SELECT
 
 		;WITH XMLNAMESPACES(N'http://jpk.mf.gov.pl/wzor/2016/03/09/03092//'      AS tns
 			, N'http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/' AS etd
-			, N'http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/' AS kck)
+			, N'http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/' AS kck
+			, N'http://www.w3.org/2001/XMLSchema' AS xsd)
 
 			 select @xml =
 
@@ -1133,7 +1144,7 @@ SELECT
 		, w.waluta_rach			AS [tns:DomyslnyKodWaluty]
 		,c.KodUrzedu			AS [tns:KodUrzedu]
                 FROM WB (NOLOCK) w
-				join known_acc_num k (NOLOCK) ON (k.numer_rach = w.numer)
+				join known_acc_num k (NOLOCK) ON (k.numer_rach = w.numer_rach)
                 join Podmiot c (NOLOCK) ON (c.PODMIOT_ID = k.id_podmiotu)
 				WHERE (w.numer = @numer)
         FOR XML PATH('tns:Naglowek'), TYPE
@@ -1170,46 +1181,47 @@ SELECT
         FOR XML PATH('tns:Podmiot1'), TYPE
         )
         ,
-
-        (SELECT liczba_wierszy  AS [tns:LiczbaWierszy] 
-				,	suma_obciazen AS [tns:SumaObciazen]
-				, suma_obciazen AS [tns:SumaUznan]
+		(SELECT numer_rachunku  AS [tns:NumerRachunku] 
 				FROM #TI t WHERE t.numer_wyciagu = @numer
                                                                                
 
 
-        FOR XML PATH('tns:WyciagCtrl'), TYPE 
+        FOR XML PATH('tns:NumerRachunku'), TYPE
         ),
+
 
 		(SELECT saldo_poczatkowe  AS [tns:SaldoPoczatkowe] 
 				,	saldo_koncowe AS [tns:SaldoKoncowe]
-				FROM #TI t WHERE t.numer_rachunku = @numer                                                                               
+				FROM #TI t WHERE t.numer_wyciagu = @numer                                                                               
 
 
-        FOR XML PATH('tns:Salda'), TYPE 
+        FOR XML PATH('tns:Salda'), TYPE, ROOT('JPK') 
         ),
 
-		(SELECT numer_rachunku  AS [tns:NumerRachunku] 
-				FROM #TI t WHERE t.numer_rachunku = @numer
-                                                                               
-
-
-        FOR XML PATH('tns:NumerRachunku'), TYPE 
-        )
-        ,
-        (SELECT numer_wiersza AS [tns:NumerWiersza]
+		(SELECT numer_wiersza AS [tns:NumerWiersza]
 		, data_operacji AS [tns:DataOperacji]
 		, nazwa_podmiotu AS [tns:NazwaPodmiotu]
 		, opis_operacji AS [tns:OpisOperacji]
 		, kwota_operacji AS [tns:KwotaOperacji]
 		, saldo_operacji AS [tns:SaldoOperacji]
-                FROM #TIT t
+                FROM #TIT
         FOR XML PATH('tns:WyciagWiersz'), TYPE
+        ),
+
+		(SELECT t.liczba_wierszy  AS [tns:LiczbaWierszy] 
+				,	t.suma_obciazen AS [tns:SumaObciazen]
+				, t.suma_uznan AS [tns:SumaUznan]
+				FROM #TI t WHERE t.numer_wyciagu = @numer
+                                                                               
+
+
+        FOR XML PATH('tns:WyciagCtrl'), TYPE
         )
+  
         
         FOR XML PATH(''), TYPE, ROOT('tns:JPK')
         )
-		SET @xml.modify('declare namespace tns = "http://jpk.mf.gov.pl/wzor/2016/03/09/03092/"; insert attribute xsi:schemaLocation{"http://jpk.mf.gov.pl/wzor/2016/03/09/03092/ schema.xsd"} as last into (tns:JPK)[1]')
+		--SET @xml.modify('declare namespace tns = "http://jpk.mf.gov.pl/wzor/2016/03/09/03092/"; insert attribute xsi:schemaLocation{"http://jpk.mf.gov.pl/wzor/2016/03/09/03092/ schema.xsd"} as last into (tns:JPK)[1]')
 
         if @return = 'headers'
                 select i.* FROM #TI i
@@ -1227,6 +1239,11 @@ exec JPK_WB_1 @numer='12345AB6789'
 
 -- SELECT * FROM tmp_wb_na
 -- SELECT * FROM tmp_wb_poz
+-- SELECT * FROM WB
+-- SELECT * FROM WB_DET
+-- SELECT * FROM Podmiot
 
 -- SELECT * FROM ELOG_D
 -- SELECT * FROM ELOG_N
+-- SELECT * FROM #TI
+-- SELECT 
