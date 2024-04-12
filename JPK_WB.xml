@@ -1,0 +1,85 @@
+﻿<tns:JPK xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+  <tns:Naglowek xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:KodFormularza wersjaSchemy="1-0" kodSystemowy="JPK_WB (1)">JPK_WB</tns:KodFormularza>
+    <tns:WariantFormularza>1</tns:WariantFormularza>
+    <tns:CelZlozenia>1</tns:CelZlozenia>
+    <tns:DataWytworzeniaJPK>2024-04-12T15:14:29.417</tns:DataWytworzeniaJPK>
+    <tns:DataOd>2023-04-01T00:00:00</tns:DataOd>
+    <tns:DataDo>2023-04-30T00:00:00</tns:DataDo>
+    <tns:DomyslnyKodWaluty>PLN</tns:DomyslnyKodWaluty>
+    <tns:KodUrzedu>026</tns:KodUrzedu>
+  </tns:Naglowek>
+  <tns:Podmiot1 xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:IdentyfikatorPodmiotu xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+      <etd:NIP>1234567890</etd:NIP>
+      <etd:PelnaNazwa>firma XXX</etd:PelnaNazwa>
+      <etd:REGON>012345678</etd:REGON>
+    </tns:IdentyfikatorPodmiotu>
+    <tns:AdresPodmiotu xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+      <etd:KodKraju>PL</etd:KodKraju>
+      <etd:Wojewodztwo>Mazowieckie</etd:Wojewodztwo>
+      <etd:Powiat>warszawski</etd:Powiat>
+      <etd:Gmina>Warszawa</etd:Gmina>
+      <etd:Ulica>Marszalkowska</etd:Ulica>
+      <etd:NrDomu>100</etd:NrDomu>
+      <etd:NrLokalu>12A</etd:NrLokalu>
+      <etd:Miejscowosc>Warszawa</etd:Miejscowosc>
+      <etd:KodPocztowy>00-001</etd:KodPocztowy>
+      <etd:Poczta>Warszawa</etd:Poczta>
+    </tns:AdresPodmiotu>
+  </tns:Podmiot1>
+  <tns:NumerRachunku xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:NumerRachunku>PL61109010140000071219812874</tns:NumerRachunku>
+  </tns:NumerRachunku>
+  <JPK xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:Salda>
+      <tns:SaldoPoczatkowe>1000.0000</tns:SaldoPoczatkowe>
+      <tns:SaldoKoncowe>1500.0000</tns:SaldoKoncowe>
+    </tns:Salda>
+  </JPK>
+  <tns:WyciagWiersz xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:NumerWiersza>1</tns:NumerWiersza>
+    <tns:DataOperacji>2024-04-01T00:00:00</tns:DataOperacji>
+    <tns:NazwaPodmiotu>Telekomunikacja Polska S.A</tns:NazwaPodmiotu>
+    <tns:OpisOperacji>Opłata za usługi telekomunikacyjne</tns:OpisOperacji>
+    <tns:KwotaOperacji>-500.0000</tns:KwotaOperacji>
+    <tns:SaldoOperacji>500.0000</tns:SaldoOperacji>
+  </tns:WyciagWiersz>
+  <tns:WyciagWiersz xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:NumerWiersza>2</tns:NumerWiersza>
+    <tns:DataOperacji>2024-04-03T00:00:00</tns:DataOperacji>
+    <tns:NazwaPodmiotu>XYZ Sp. z o.o.</tns:NazwaPodmiotu>
+    <tns:OpisOperacji>Wpłata od XYZ Sp. z o.o.</tns:OpisOperacji>
+    <tns:KwotaOperacji>2000.0000</tns:KwotaOperacji>
+    <tns:SaldoOperacji>2500.0000</tns:SaldoOperacji>
+  </tns:WyciagWiersz>
+  <tns:WyciagWiersz xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:NumerWiersza>3</tns:NumerWiersza>
+    <tns:DataOperacji>2024-04-15T00:00:00</tns:DataOperacji>
+    <tns:NazwaPodmiotu>ABCD</tns:NazwaPodmiotu>
+    <tns:OpisOperacji>Przelew wychodzący na rzecz ABCD</tns:OpisOperacji>
+    <tns:KwotaOperacji>-1000.0000</tns:KwotaOperacji>
+    <tns:SaldoOperacji>1500.0000</tns:SaldoOperacji>
+  </tns:WyciagWiersz>
+  <tns:WyciagWiersz xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:NumerWiersza>4</tns:NumerWiersza>
+    <tns:DataOperacji>2024-04-20T00:00:00</tns:DataOperacji>
+    <tns:NazwaPodmiotu>Office Supplies Co.</tns:NazwaPodmiotu>
+    <tns:OpisOperacji>Zakup materiałów biurowych</tns:OpisOperacji>
+    <tns:KwotaOperacji>-200.0000</tns:KwotaOperacji>
+    <tns:SaldoOperacji>1300.0000</tns:SaldoOperacji>
+  </tns:WyciagWiersz>
+  <tns:WyciagWiersz xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:NumerWiersza>5</tns:NumerWiersza>
+    <tns:DataOperacji>2024-04-27T00:00:00</tns:DataOperacji>
+    <tns:NazwaPodmiotu>Jan Kowalski</tns:NazwaPodmiotu>
+    <tns:OpisOperacji>Wpłata gotówkowa</tns:OpisOperacji>
+    <tns:KwotaOperacji>500.0000</tns:KwotaOperacji>
+    <tns:SaldoOperacji>1800.0000</tns:SaldoOperacji>
+  </tns:WyciagWiersz>
+  <tns:WyciagCtrl xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:kck="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2016/03/09/03092//">
+    <tns:LiczbaWierszy>5</tns:LiczbaWierszy>
+    <tns:SumaObciazen>-1700.0000</tns:SumaObciazen>
+    <tns:SumaUznan>2500.0000</tns:SumaUznan>
+  </tns:WyciagCtrl>
+</tns:JPK>
